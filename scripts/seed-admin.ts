@@ -40,26 +40,27 @@ async function seedAdmin() {
   const AdminModel =
     mongoose.models.Admin || mongoose.model('Admin', AdminSchema);
 
-  const existing = await AdminModel.findOne({ email });
-  if (existing) {
-    console.log(`Admin account with email [${email}] already exists. Skipping creation.`);
-    await mongoose.disconnect();
-    process.exit(0);
-  }
-
-  console.log(`Hashing password for admin account: ${email}...`);
   const salt = await bcrypt.genSalt(10);
   const passwordHash = await bcrypt.hash(password, salt);
 
-  await AdminModel.create({
-    name,
-    email,
-    passwordHash,
-    role: 'admin',
-    isActive: true,
-  });
+  const existing = await AdminModel.findOne({ email });
+  if (existing) {
+    existing.name = name;
+    existing.passwordHash = passwordHash;
+    existing.role = 'admin';
+    existing.isActive = true;
+    await existing.save();
+  } else {
+    await AdminModel.create({
+      name,
+      email,
+      passwordHash,
+      role: 'admin',
+      isActive: true,
+    });
+  }
 
-  console.log(`Admin user [${name} <${email}>] successfully seeded.`);
+  console.log(`Admin credentials synchronized successfully for ${email}`);
   await mongoose.disconnect();
   process.exit(0);
 }

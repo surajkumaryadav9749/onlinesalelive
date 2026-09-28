@@ -3,6 +3,7 @@ import { connectToDatabase } from '@/lib/db';
 import { Deal } from '@/models/Deal';
 import { Product } from '@/models/Product';
 import { checkAdminAuth, errorResponse, successResponse, isValidId } from '@/lib/api-helpers';
+import { revalidateCatalog } from '@/lib/revalidate';
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -81,6 +82,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
     if (body.isActive !== undefined) existing.isActive = Boolean(body.isActive);
 
     await existing.save();
+    revalidateCatalog(existing.productSlug);
     return successResponse(existing);
   } catch (err) {
     console.error('Error updating deal:', err instanceof Error ? err.message : err);
@@ -101,7 +103,9 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     const deal = await Deal.findOne(query);
     if (!deal) return errorResponse('Deal not found', 404);
 
+    const prodSlug = deal.productSlug;
     await Deal.deleteOne({ _id: deal._id });
+    revalidateCatalog(prodSlug);
     return successResponse({ message: 'Deal deleted successfully', id: deal._id });
   } catch (err) {
     console.error('Error deleting deal:', err instanceof Error ? err.message : err);

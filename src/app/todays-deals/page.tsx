@@ -6,6 +6,8 @@ import { Clock } from 'lucide-react';
 import type { Metadata } from 'next';
 import { buildCanonicalUrl } from '@/lib/seo';
 
+export const revalidate = 60;
+
 export const metadata: Metadata = {
   title: "Today's Best Shopping Deals & Flash Discounts | OnlineSaleLive",
   description:

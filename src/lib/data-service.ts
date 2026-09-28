@@ -210,6 +210,14 @@ interface RawComparisonDoc {
   updatedAt?: string | Date;
 }
 
+export function getSafeProductImage(image?: string, name?: string): string {
+  if (image && typeof image === 'string' && image.trim() !== '') {
+    return image.trim();
+  }
+  const cleanName = (name || 'Product').trim().slice(0, 20);
+  return `https://placehold.co/600x400/f1f5f9/475569?text=${encodeURIComponent(cleanName || 'OnlineSaleLive')}`;
+}
+
 // Mappers
 function mapProduct(doc: RawProductDoc): Product {
   const catObj = doc.category as { name?: string } | undefined;
@@ -220,13 +228,18 @@ function mapProduct(doc: RawProductDoc): Product {
       ? doc.categorySlug.charAt(0).toUpperCase() + doc.categorySlug.slice(1)
       : 'Electronics';
 
+  const safeImage = getSafeProductImage(doc.image, doc.name);
+  const safeImages = Array.isArray(doc.images) && doc.images.length > 0
+    ? doc.images.map((img) => getSafeProductImage(img, doc.name))
+    : [safeImage];
+
   return {
     id: String(doc._id),
     name: doc.name,
     slug: doc.slug,
     description: doc.description || '',
-    image: doc.image || '',
-    images: Array.isArray(doc.images) && doc.images.length > 0 ? doc.images : [doc.image].filter(Boolean) as string[],
+    image: safeImage,
+    images: safeImages,
     price: doc.price,
     originalPrice: doc.originalPrice || doc.price,
     discountPercent: doc.discountPercent || 0,
@@ -494,13 +507,22 @@ export async function getProductsUnderPrice(maxPrice: number): Promise<Product[]
 export async function getFeaturedProducts(limit = 8): Promise<Product[]> {
   return withDbFallback(
     async () => {
-      const docs = await ProductModel.find({
+      let docs = await ProductModel.find({
         isFeatured: true,
         isActive: { $ne: false },
       })
         .populate('category')
         .limit(limit)
         .lean();
+
+      if (docs.length === 0) {
+        docs = await ProductModel.find({ isActive: { $ne: false } })
+          .populate('category')
+          .sort({ createdAt: -1 })
+          .limit(limit)
+          .lean();
+      }
+
       return docs.map(mapProduct);
     },
     () => mockProducts.filter((p) => p.featured).slice(0, limit)
@@ -522,11 +544,15 @@ export interface MostClickedResult {
 }
 
 export async function getTrendingProductsWithMeta(
-  limit = 8,
-  days = 7
+  limitOrOptions: number | { limit?: number; days?: number } = 8,
+  daysParam = 7
 ): Promise<TrendingProductsResult> {
-  const safeLimit = Math.max(1, Math.min(20, limit));
-  const safeDays = Math.max(1, Math.min(30, days));
+  const rawLimit = typeof limitOrOptions === 'object' && limitOrOptions !== null ? limitOrOptions.limit : limitOrOptions;
+  const rawDays = typeof limitOrOptions === 'object' && limitOrOptions !== null ? limitOrOptions.days : daysParam;
+  const limitNum = typeof rawLimit === 'number' && Number.isFinite(rawLimit) ? rawLimit : 8;
+  const daysNum = typeof rawDays === 'number' && Number.isFinite(rawDays) ? rawDays : 7;
+  const safeLimit = Math.max(1, Math.min(20, limitNum));
+  const safeDays = Math.max(1, Math.min(30, daysNum));
   const sinceDate = new Date(Date.now() - safeDays * 24 * 60 * 60 * 1000);
 
   return withDbFallback(
@@ -593,8 +619,8 @@ export async function getTrendingProductsWithMeta(
         };
       }
 
-      // Fallback: items flagged as isTrending or isFeatured in database
-      const fallbackDocs = await ProductModel.find({
+      // Fallback: items flagged as isTrending or isFeatured, or active products if none flagged
+      let fallbackDocs = await ProductModel.find({
         $or: [{ isTrending: true }, { isFeatured: true }],
         isActive: { $ne: false },
       })
@@ -602,6 +628,14 @@ export async function getTrendingProductsWithMeta(
         .sort({ isTrending: -1, isFeatured: -1, createdAt: -1 })
         .limit(safeLimit)
         .lean();
+
+      if (fallbackDocs.length === 0) {
+        fallbackDocs = await ProductModel.find({ isActive: { $ne: false } })
+          .populate('category')
+          .sort({ createdAt: -1 })
+          .limit(safeLimit)
+          .lean();
+      }
 
       return {
         products: fallbackDocs.map(mapProduct),
@@ -743,7 +777,22 @@ export async function getAllCategories(): Promise<Category[]> {
       const docs = await CategoryModel.find({ isActive: { $ne: false } })
         .sort({ name: 1 })
         .lean();
-      return docs.map(mapCategory);
+
+      // Aggregate live product counts per category
+      const productCounts = await ProductModel.aggregate([
+        { $match: { isActive: { $ne: false } } },
+        { $group: { _id: '$categorySlug', count: { $sum: 1 } } },
+      ]);
+      const countMap = new Map(productCounts.map((c) => [String(c._id).toLowerCase(), c.count]));
+
+      return docs.map((doc) => {
+        const cat = mapCategory(doc);
+        const dynamicCount = countMap.get(cat.slug.toLowerCase()) || 0;
+        return {
+          ...cat,
+          itemCount: Math.max(cat.itemCount, dynamicCount),
+        };
+      });
     },
     () => mockCategories
   );
@@ -756,7 +805,18 @@ export async function getCategoryBySlug(slug: string): Promise<Category | undefi
         slug: slug.toLowerCase(),
         isActive: { $ne: false },
       }).lean();
-      return doc ? mapCategory(doc) : undefined;
+      if (!doc) return undefined;
+
+      const dynamicCount = await ProductModel.countDocuments({
+        categorySlug: slug.toLowerCase(),
+        isActive: { $ne: false },
+      });
+
+      const cat = mapCategory(doc);
+      return {
+        ...cat,
+        itemCount: Math.max(cat.itemCount, dynamicCount),
+      };
     },
     () => mockCategories.find((c) => c.slug.toLowerCase() === slug.toLowerCase())
   );
@@ -765,16 +825,48 @@ export async function getCategoryBySlug(slug: string): Promise<Category | undefi
 export async function getFeaturedCategories(limit = 8): Promise<Category[]> {
   return withDbFallback(
     async () => {
-      const docs = await CategoryModel.find({
+      let docs = await CategoryModel.find({
         featured: true,
         isActive: { $ne: false },
       })
         .limit(limit)
         .lean();
+
+      if (docs.length === 0) {
+        docs = await CategoryModel.find({ isActive: { $ne: false } })
+          .sort({ name: 1 })
+          .limit(limit)
+          .lean();
+      }
+
       return docs.map(mapCategory);
     },
     () => mockCategories.filter((c) => c.featured).slice(0, limit)
   );
+}
+
+// Convert a Product with a deal/discount into a Deal object
+export function productToDeal(product: Product): Deal {
+  const primaryOffer =
+    (product.marketplaces || []).find((m) => m.isActive !== false) ||
+    product.marketplaces?.[0];
+
+  return {
+    id: `prod-deal-${product.id}`,
+    title: product.name,
+    slug: product.slug,
+    product,
+    dealType: product.dealType || 'Price Drop',
+    discountPercent: product.discountPercent,
+    marketplace: primaryOffer?.name || 'Amazon',
+    marketplaceUrl: primaryOffer?.url || '#',
+    affiliateUrl: primaryOffer?.affiliateUrl || '',
+    isAffiliate: Boolean(primaryOffer?.isAffiliate),
+    endsIn: 'Limited time',
+    status: 'active',
+    verified: true,
+    isActive: true,
+  };
 }
 
 // ================= Deal Queries =================
@@ -794,7 +886,25 @@ export async function getAllDeals(): Promise<Deal[]> {
         .populate('product')
         .sort({ discountPercent: -1 })
         .lean();
-      return docs.map(mapDeal).filter(isDealCurrentlyActive);
+
+      const dealDocs = docs.map(mapDeal).filter(isDealCurrentlyActive);
+      if (dealDocs.length > 0) {
+        return dealDocs;
+      }
+
+      // If no dedicated deals exist, surface active products with discounts or deals
+      const discountedProducts = await ProductModel.find({
+        isActive: { $ne: false },
+        $or: [
+          { discountPercent: { $gt: 0 } },
+          { dealType: { $in: ["Today's Deal", "Sale", "Major Discount", "Flash Deal", "Price Drop", "Featured Deal"] } },
+        ],
+      })
+        .populate('category')
+        .sort({ discountPercent: -1 })
+        .lean();
+
+      return discountedProducts.map(mapProduct).map(productToDeal);
     },
     () => mockDeals.filter(isDealCurrentlyActive)
   );
@@ -816,7 +926,21 @@ export async function getDealsByType(dealType: string): Promise<Deal[]> {
       })
         .populate('product')
         .lean();
-      return docs.map(mapDeal).filter(isDealCurrentlyActive);
+
+      const dealDocs = docs.map(mapDeal).filter(isDealCurrentlyActive);
+      if (dealDocs.length > 0) {
+        return dealDocs;
+      }
+
+      // Fallback to active products matching dealType
+      const discountedProducts = await ProductModel.find({
+        dealType: { $regex: new RegExp(`^${dealType}$`, 'i') },
+        isActive: { $ne: false },
+      })
+        .populate('category')
+        .lean();
+
+      return discountedProducts.map(mapProduct).map(productToDeal);
     },
     () =>
       mockDeals
@@ -842,7 +966,23 @@ export async function getTodaysDeals(limit = 6): Promise<Deal[]> {
         .populate('product')
         .limit(limit)
         .lean();
-      return docs.map(mapDeal).filter(isDealCurrentlyActive);
+
+      const dealDocs = docs.map(mapDeal).filter(isDealCurrentlyActive);
+      if (dealDocs.length > 0) {
+        return dealDocs;
+      }
+
+      // Fallback: active products with discounts or deals
+      const discountedProducts = await ProductModel.find({
+        isActive: { $ne: false },
+        discountPercent: { $gt: 0 },
+      })
+        .populate('category')
+        .sort({ discountPercent: -1 })
+        .limit(limit)
+        .lean();
+
+      return discountedProducts.map(mapProduct).map(productToDeal);
     },
     () =>
       mockDeals
@@ -934,8 +1074,27 @@ export async function getPopularDeals(
         .limit(limit)
         .lean();
 
+      const activeDeals = fallbackDocs.map(mapDeal).filter(isDealCurrentlyActive);
+      if (activeDeals.length > 0) {
+        return {
+          deals: activeDeals,
+          isClickPopular: false,
+          timeWindowDays: days,
+        };
+      }
+
+      // If no dedicated deals exist, surface active products with discounts or deals
+      const discountedProducts = await ProductModel.find({
+        isActive: { $ne: false },
+        discountPercent: { $gt: 0 },
+      })
+        .populate('category')
+        .sort({ discountPercent: -1 })
+        .limit(limit)
+        .lean();
+
       return {
-        deals: fallbackDocs.map(mapDeal).filter(isDealCurrentlyActive),
+        deals: discountedProducts.map(mapProduct).map(productToDeal),
         isClickPopular: false,
         timeWindowDays: days,
       };

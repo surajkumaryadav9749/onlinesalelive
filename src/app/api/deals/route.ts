@@ -3,6 +3,7 @@ import { connectToDatabase } from '@/lib/db';
 import { Deal } from '@/models/Deal';
 import { Product } from '@/models/Product';
 import { checkAdminAuth, errorResponse, successResponse, isValidId } from '@/lib/api-helpers';
+import { revalidateCatalog } from '@/lib/revalidate';
 
 export async function GET(req: NextRequest) {
   try {
@@ -120,6 +121,7 @@ export async function POST(req: NextRequest) {
       isActive: isActive !== undefined ? Boolean(isActive) : true,
     });
 
+    revalidateCatalog(deal.productSlug);
     return successResponse(deal, 201);
   } catch (err) {
     console.error('Error creating deal:', err instanceof Error ? err.message : err);

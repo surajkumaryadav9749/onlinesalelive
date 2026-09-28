@@ -11,6 +11,9 @@ import type { Metadata } from 'next';
 
 import { createCategoryMetadata } from '@/lib/seo';
 
+export const revalidate = 60;
+export const dynamicParams = true;
+
 interface CategoryPageProps {
   params: Promise<{ slug: string }>;
 }

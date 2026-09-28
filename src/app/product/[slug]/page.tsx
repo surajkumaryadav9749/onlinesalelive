@@ -30,6 +30,9 @@ import {
   serializeJsonLd,
 } from '@/lib/seo';
 
+export const revalidate = 60;
+export const dynamicParams = true;
+
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
 }
@@ -93,7 +96,13 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
         <div className="lg:col-span-5 bg-white p-6 rounded-3xl border border-slate-200/90 shadow-2xs space-y-4">
           <div className="relative w-full pt-[90%] bg-slate-50 rounded-2xl overflow-hidden">
             <Image
-              src={product.image}
+              src={
+                product.image && product.image.trim() !== ''
+                  ? product.image
+                  : `https://placehold.co/600x400/f1f5f9/475569?text=${encodeURIComponent(
+                      product.name.slice(0, 20)
+                    )}`
+              }
               alt={product.name}
               fill
               priority

@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { connectToDatabase } from '@/lib/db';
 import { Guide } from '@/models/Guide';
 import { checkAdminAuth, errorResponse, successResponse, isValidId } from '@/lib/api-helpers';
+import { revalidateContent } from '@/lib/revalidate';
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -70,6 +71,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
     if (body.seoDescription !== undefined) existing.seoDescription = body.seoDescription;
 
     await existing.save();
+    revalidateContent('guide', existing.slug);
     return successResponse(existing);
   } catch (err) {
     console.error('Error updating guide:', err instanceof Error ? err.message : err);
@@ -90,7 +92,9 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     const guide = await Guide.findOne(query);
     if (!guide) return errorResponse('Guide not found', 404);
 
+    const guideSlug = guide.slug;
     await Guide.deleteOne({ _id: guide._id });
+    revalidateContent('guide', guideSlug);
     return successResponse({ message: 'Guide deleted successfully', id: guide._id });
   } catch (err) {
     console.error('Error deleting guide:', err instanceof Error ? err.message : err);

@@ -7,6 +7,8 @@ import type { Metadata } from 'next';
 
 import { buildCanonicalUrl } from '@/lib/seo';
 
+export const revalidate = 60;
+
 export const metadata: Metadata = {
   title: 'Hands-on Product Reviews & Verdicts | OnlineSaleLive',
   description:

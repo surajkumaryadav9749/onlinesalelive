@@ -7,6 +7,8 @@ import { Tag, Sparkles, ArrowRight } from 'lucide-react';
 import type { Metadata } from 'next';
 import { buildCanonicalUrl } from '@/lib/seo';
 
+export const revalidate = 60;
+
 export const metadata: Metadata = {
   title: 'Festive & Clearance Sale Events — Up to 75% Off | OnlineSaleLive',
   description:

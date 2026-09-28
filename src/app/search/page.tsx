@@ -27,6 +27,8 @@ import {
   RotateCcw,
 } from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
+
 interface SearchPageProps {
   searchParams: Promise<{
     q?: string;

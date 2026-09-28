@@ -4,6 +4,8 @@ import { ProductsPageClient } from './ProductsPageClient';
 import type { Metadata } from 'next';
 import { buildCanonicalUrl } from '@/lib/seo';
 
+export const revalidate = 60;
+
 export const metadata: Metadata = {
   title: 'All Products & Best Deals Across Stores | OnlineSaleLive',
   description:

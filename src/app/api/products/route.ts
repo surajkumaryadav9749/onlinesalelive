@@ -3,6 +3,7 @@ import { connectToDatabase } from '@/lib/db';
 import { Product } from '@/models/Product';
 import { Category } from '@/models/Category';
 import { checkAdminAuth, errorResponse, successResponse, isValidId } from '@/lib/api-helpers';
+import { revalidateCatalog } from '@/lib/revalidate';
 
 export async function GET(req: NextRequest) {
   try {
@@ -145,6 +146,7 @@ export async function POST(req: NextRequest) {
       isActive: isActive !== undefined ? Boolean(isActive) : true,
     });
 
+    revalidateCatalog(product.slug, product.categorySlug);
     return successResponse(product, 201);
   } catch (err) {
     console.error('Error creating product:', err instanceof Error ? err.message : err);

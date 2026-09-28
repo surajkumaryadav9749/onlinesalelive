@@ -9,6 +9,8 @@ import { PriceRangeView } from '@/components/products/PriceRangeView';
 
 import { createPriceRangeMetadata } from '@/lib/seo';
 
+export const revalidate = 60;
+
 export const metadata: Metadata = createPriceRangeMetadata(
   2000,
   'Smartwatches, Running Shoes & Audio',

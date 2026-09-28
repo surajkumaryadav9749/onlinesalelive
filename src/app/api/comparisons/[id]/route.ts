@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { connectToDatabase } from '@/lib/db';
 import { Comparison } from '@/models/Comparison';
 import { checkAdminAuth, errorResponse, successResponse, isValidId } from '@/lib/api-helpers';
+import { revalidateContent } from '@/lib/revalidate';
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -62,6 +63,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
     if (body.seoDescription !== undefined) existing.seoDescription = body.seoDescription;
 
     await existing.save();
+    revalidateContent('comparison', existing.slug);
     return successResponse(existing);
   } catch (err) {
     console.error('Error updating comparison:', err instanceof Error ? err.message : err);
@@ -82,7 +84,9 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     const comparison = await Comparison.findOne(query);
     if (!comparison) return errorResponse('Comparison not found', 404);
 
+    const compSlug = comparison.slug;
     await Comparison.deleteOne({ _id: comparison._id });
+    revalidateContent('comparison', compSlug);
     return successResponse({ message: 'Comparison deleted successfully', id: comparison._id });
   } catch (err) {
     console.error('Error deleting comparison:', err instanceof Error ? err.message : err);

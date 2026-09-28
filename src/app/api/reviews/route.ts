@@ -3,6 +3,7 @@ import { connectToDatabase } from '@/lib/db';
 import { Review } from '@/models/Review';
 import { Product } from '@/models/Product';
 import { checkAdminAuth, errorResponse, successResponse, isValidId } from '@/lib/api-helpers';
+import { revalidateContent } from '@/lib/revalidate';
 
 export async function GET(req: NextRequest) {
   try {
@@ -105,6 +106,7 @@ export async function POST(req: NextRequest) {
       seoDescription: seoDescription || '',
     });
 
+    revalidateContent('review', review.slug);
     return successResponse(review, 201);
   } catch (err) {
     console.error('Error creating review:', err instanceof Error ? err.message : err);

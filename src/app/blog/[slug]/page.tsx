@@ -8,6 +8,9 @@ import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
 import { BlogCard } from '@/components/blog/BlogCard';
 import { Clock, Calendar, User, ArrowLeft, ArrowRight, Tag } from 'lucide-react';
 
+export const revalidate = 60;
+export const dynamicParams = true;
+
 interface BlogPostPageProps {
   params: Promise<{ slug: string }>;
 }

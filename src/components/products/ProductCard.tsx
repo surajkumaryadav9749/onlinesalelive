@@ -15,7 +15,12 @@ interface ProductCardProps {
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product, priority = false }) => {
-  const [imgSrc, setImgSrc] = useState(product.image);
+  const defaultPlaceholder = `https://placehold.co/600x400/f1f5f9/475569?text=${encodeURIComponent(
+    (product.name || 'Product').slice(0, 18)
+  )}`;
+  const [imgSrc, setImgSrc] = useState(
+    product.image && product.image.trim() !== '' ? product.image : defaultPlaceholder
+  );
 
   // Find lowest price marketplace among active, in-stock offers
   const validMarketplaces = (product.marketplaces || []).filter(
@@ -49,7 +54,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, priority = fa
         className="relative block w-full pt-[80%] bg-slate-50 overflow-hidden"
       >
         <Image
-          src={imgSrc}
+          src={imgSrc || defaultPlaceholder}
           alt={product.name}
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
@@ -57,11 +62,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, priority = fa
           className="object-cover object-center group-hover:scale-105 transition-transform duration-300 p-2 rounded-xl"
           onError={() => {
             // Fallback placeholder if image load fails
-            setImgSrc(
-              `https://placehold.co/600x400/e2e8f0/0f172a?text=${encodeURIComponent(
-                product.name.slice(0, 15)
-              )}`
-            );
+            setImgSrc(defaultPlaceholder);
           }}
         />
       </Link>

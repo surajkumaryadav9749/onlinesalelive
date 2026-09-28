@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { connectToDatabase } from '@/lib/db';
 import { Category } from '@/models/Category';
 import { checkAdminAuth, errorResponse, successResponse } from '@/lib/api-helpers';
+import { revalidateCatalog } from '@/lib/revalidate';
 
 export async function GET(req: NextRequest) {
   try {
@@ -63,6 +64,7 @@ export async function POST(req: NextRequest) {
       isActive: isActive !== undefined ? Boolean(isActive) : true,
     });
 
+    revalidateCatalog(undefined, normalizedSlug);
     return successResponse(category, 201);
   } catch (err) {
     console.error('Error creating category:', err instanceof Error ? err.message : err);

@@ -5,6 +5,7 @@ import { Category } from '@/models/Category';
 import { Deal } from '@/models/Deal';
 import { Review } from '@/models/Review';
 import { checkAdminAuth, errorResponse, successResponse, isValidId } from '@/lib/api-helpers';
+import { revalidateCatalog } from '@/lib/revalidate';
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -95,6 +96,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
     if (body.isActive !== undefined) existing.isActive = Boolean(body.isActive);
 
     await existing.save();
+    revalidateCatalog(existing.slug, existing.categorySlug);
     return successResponse(existing);
   } catch (err) {
     console.error('Error updating product:', err instanceof Error ? err.message : err);
@@ -126,7 +128,10 @@ export async function DELETE(req: NextRequest, { params }: Params) {
       );
     }
 
+    const prodSlug = product.slug;
+    const catSlug = product.categorySlug;
     await Product.deleteOne({ _id: product._id });
+    revalidateCatalog(prodSlug, catSlug);
     return successResponse({ message: 'Product deleted successfully', id: product._id });
   } catch (err) {
     console.error('Error deleting product:', err instanceof Error ? err.message : err);

@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { connectToDatabase } from '@/lib/db';
 import { Article } from '@/models/Article';
 import { checkAdminAuth, errorResponse, successResponse } from '@/lib/api-helpers';
+import { revalidateContent } from '@/lib/revalidate';
 
 export async function GET(req: NextRequest) {
   try {
@@ -72,6 +73,7 @@ export async function POST(req: NextRequest) {
       seoDescription: seoDescription || '',
     });
 
+    revalidateContent('article', article.slug);
     return successResponse(article, 201);
   } catch (err) {
     console.error('Error creating article:', err instanceof Error ? err.message : err);

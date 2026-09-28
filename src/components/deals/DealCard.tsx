@@ -13,24 +13,27 @@ interface DealCardProps {
 }
 
 export const DealCard: React.FC<DealCardProps> = ({ deal }) => {
-  const [imgSrc, setImgSrc] = useState(deal.product.image);
+  const defaultPlaceholder = `https://placehold.co/400x400/f1f5f9/475569?text=${encodeURIComponent(
+    (deal.product?.name || deal.title || 'Deal').slice(0, 15)
+  )}`;
+  const [imgSrc, setImgSrc] = useState(
+    deal.product?.image && deal.product.image.trim() !== ''
+      ? deal.product.image
+      : defaultPlaceholder
+  );
 
   return (
     <div className="group bg-white rounded-2xl border border-slate-200 shadow-2xs hover:shadow-lg transition-all duration-200 overflow-hidden flex flex-col sm:flex-row">
       {/* Product Image Area */}
       <div className="relative w-full sm:w-48 h-48 sm:h-auto shrink-0 bg-slate-50 overflow-hidden">
         <Image
-          src={imgSrc}
-          alt={deal.product.name}
+          src={imgSrc || defaultPlaceholder}
+          alt={deal.product?.name || deal.title}
           fill
           sizes="(max-width: 640px) 100vw, 200px"
           className="object-cover object-center group-hover:scale-105 transition-transform duration-300 p-2"
           onError={() => {
-            setImgSrc(
-              `https://placehold.co/400x400/e2e8f0/0f172a?text=${encodeURIComponent(
-                deal.product.name.slice(0, 15)
-              )}`
-            );
+            setImgSrc(defaultPlaceholder);
           }}
         />
         <div className="absolute top-2 left-2">

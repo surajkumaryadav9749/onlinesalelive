@@ -23,6 +23,9 @@ import {
 } from 'lucide-react';
 import type { Metadata } from 'next';
 
+export const revalidate = 60;
+export const dynamicParams = true;
+
 interface ReviewPageProps {
   params: Promise<{ slug: string }>;
 }

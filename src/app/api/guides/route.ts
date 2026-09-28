@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { connectToDatabase } from '@/lib/db';
 import { Guide } from '@/models/Guide';
 import { checkAdminAuth, errorResponse, successResponse } from '@/lib/api-helpers';
+import { revalidateContent } from '@/lib/revalidate';
 
 export async function GET(req: NextRequest) {
   try {
@@ -86,6 +87,7 @@ export async function POST(req: NextRequest) {
       seoDescription: seoDescription || '',
     });
 
+    revalidateContent('guide', guide.slug);
     return successResponse(guide, 201);
   } catch (err) {
     console.error('Error creating guide:', err instanceof Error ? err.message : err);

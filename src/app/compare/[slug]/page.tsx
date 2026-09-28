@@ -30,6 +30,9 @@ import {
 } from '@/lib/seo';
 import { Product } from '@/types';
 
+export const revalidate = 60;
+export const dynamicParams = true;
+
 interface ComparisonPageProps {
   params: Promise<{ slug: string }>;
 }

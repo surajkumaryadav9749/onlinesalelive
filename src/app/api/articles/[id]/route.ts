@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { connectToDatabase } from '@/lib/db';
 import { Article } from '@/models/Article';
 import { checkAdminAuth, errorResponse, successResponse, isValidId } from '@/lib/api-helpers';
+import { revalidateContent } from '@/lib/revalidate';
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -63,6 +64,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
     if (body.seoDescription !== undefined) existing.seoDescription = body.seoDescription;
 
     await existing.save();
+    revalidateContent('article', existing.slug);
     return successResponse(existing);
   } catch (err) {
     console.error('Error updating article:', err instanceof Error ? err.message : err);
@@ -83,7 +85,9 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     const article = await Article.findOne(query);
     if (!article) return errorResponse('Article not found', 404);
 
+    const articleSlug = article.slug;
     await Article.deleteOne({ _id: article._id });
+    revalidateContent('article', articleSlug);
     return successResponse({ message: 'Article deleted successfully', id: article._id });
   } catch (err) {
     console.error('Error deleting article:', err instanceof Error ? err.message : err);

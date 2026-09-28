@@ -3,6 +3,7 @@ import { connectToDatabase } from '@/lib/db';
 import { Review } from '@/models/Review';
 import { Product } from '@/models/Product';
 import { checkAdminAuth, errorResponse, successResponse, isValidId } from '@/lib/api-helpers';
+import { revalidateContent } from '@/lib/revalidate';
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -83,6 +84,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
     if (body.seoDescription !== undefined) existing.seoDescription = body.seoDescription;
 
     await existing.save();
+    revalidateContent('review', existing.slug);
     return successResponse(existing);
   } catch (err) {
     console.error('Error updating review:', err instanceof Error ? err.message : err);
@@ -103,7 +105,9 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     const review = await Review.findOne(query);
     if (!review) return errorResponse('Review not found', 404);
 
+    const reviewSlug = review.slug;
     await Review.deleteOne({ _id: review._id });
+    revalidateContent('review', reviewSlug);
     return successResponse({ message: 'Review deleted successfully', id: review._id });
   } catch (err) {
     console.error('Error deleting review:', err instanceof Error ? err.message : err);

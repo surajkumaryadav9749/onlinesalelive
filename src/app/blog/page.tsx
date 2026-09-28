@@ -7,6 +7,8 @@ import { Newspaper } from 'lucide-react';
 
 import { buildCanonicalUrl } from '@/lib/seo';
 
+export const revalidate = 60;
+
 export const metadata: Metadata = {
   title: 'Shopping Hacks, Festive Guides & E-commerce Tips | OnlineSaleLive Blog',
   description:

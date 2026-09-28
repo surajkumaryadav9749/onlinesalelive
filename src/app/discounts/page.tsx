@@ -6,6 +6,8 @@ import { Percent } from 'lucide-react';
 import type { Metadata } from 'next';
 import { buildCanonicalUrl } from '@/lib/seo';
 
+export const revalidate = 60;
+
 export const metadata: Metadata = {
   title: 'Discount Brackets & Clearance Deals — Up to 70%+ Off | OnlineSaleLive',
   description:

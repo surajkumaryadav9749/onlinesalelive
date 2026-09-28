@@ -3,6 +3,7 @@ import { connectToDatabase } from '@/lib/db';
 import { Category } from '@/models/Category';
 import { Product } from '@/models/Product';
 import { checkAdminAuth, errorResponse, successResponse, isValidId } from '@/lib/api-helpers';
+import { revalidateCatalog } from '@/lib/revalidate';
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -60,6 +61,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
     if (body.isActive !== undefined) existing.isActive = Boolean(body.isActive);
 
     await existing.save();
+    revalidateCatalog(undefined, existing.slug);
     return successResponse(existing);
   } catch (err) {
     console.error('Error updating category:', err instanceof Error ? err.message : err);
@@ -89,7 +91,9 @@ export async function DELETE(req: NextRequest, { params }: Params) {
       );
     }
 
+    const catSlug = category.slug;
     await Category.deleteOne({ _id: category._id });
+    revalidateCatalog(undefined, catSlug);
     return successResponse({ message: 'Category deleted successfully', id: category._id });
   } catch (err) {
     console.error('Error deleting category:', err instanceof Error ? err.message : err);

@@ -5,6 +5,8 @@ import { DealsPageClient } from './DealsPageClient';
 
 import { buildCanonicalUrl } from '@/lib/seo';
 
+export const revalidate = 60;
+
 export const metadata: Metadata = {
   title: 'All Deals & Special Offers across Top Indian Stores | OnlineSaleLive',
   description:

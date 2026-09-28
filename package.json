@@ -11,7 +11,8 @@
     "seed:admin": "tsx scripts/seed-admin.ts",
     "test:phase3": "tsx scripts/test-phase3.ts",
     "test:phase4": "tsx scripts/test-phase4.ts",
-    "test:phase5": "tsx scripts/test-phase5.ts"
+    "test:phase5": "tsx scripts/test-phase5.ts",
+    "test:import": "tsx scripts/test-bulk-import.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -20,6 +21,7 @@
     "lucide-react": "^1.48.0",
     "mongoose": "^9.10.2",
     "next": "16.3.6",
+    "papaparse": "^5.7.0",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },
@@ -27,6 +29,7 @@
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
+    "@types/papaparse": "^5.5.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

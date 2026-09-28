@@ -10,6 +10,9 @@ interface AdminHeaderProps {
   actionText?: string;
   actionLabel?: string;
   actionHref?: string;
+  secondaryActionText?: string;
+  secondaryActionHref?: string;
+  extraActions?: React.ReactNode;
 }
 
 export const AdminHeader: React.FC<AdminHeaderProps> = ({
@@ -18,6 +21,9 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
   actionText,
   actionLabel,
   actionHref,
+  secondaryActionText,
+  secondaryActionHref,
+  extraActions,
 }) => {
   const buttonText = actionText || actionLabel;
   return (
@@ -44,6 +50,17 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
           <span>Live Site</span>
           <ExternalLink size={13} />
         </Link>
+
+        {extraActions}
+
+        {secondaryActionText && secondaryActionHref && (
+          <Link
+            href={secondaryActionHref}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-slate-700 hover:text-slate-900 bg-white border border-slate-300 hover:bg-slate-50 active:bg-slate-100 rounded-xl shadow-2xs transition-colors"
+          >
+            <span>{secondaryActionText}</span>
+          </Link>
+        )}
 
         {buttonText && actionHref && (
           <Link

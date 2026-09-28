@@ -44,6 +44,7 @@ export interface IProduct extends Document {
   isTrending: boolean;
   badgeText?: string;
   isActive: boolean;
+  source?: 'manual' | 'csv_import';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -231,6 +232,11 @@ const ProductSchema = new Schema<IProduct>(
       default: true,
       index: true,
     },
+    source: {
+      type: String,
+      enum: ['manual', 'csv_import'],
+      default: 'manual',
+    },
   },
   {
     timestamps: true,
@@ -246,6 +252,7 @@ ProductSchema.index({ isActive: 1, createdAt: -1 });
 ProductSchema.index({ isActive: 1, price: 1 });
 ProductSchema.index({ isActive: 1, categorySlug: 1 });
 ProductSchema.index({ isActive: 1, discountPercent: -1 });
+ProductSchema.index({ 'marketplaces.externalProductId': 1 });
 
 export const Product: Model<IProduct> =
   (mongoose.models.Product as Model<IProduct>) ||

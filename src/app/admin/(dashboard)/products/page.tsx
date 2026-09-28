@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { AdminHeader } from '@/components/admin/AdminHeader';
-import { Edit2, Trash2, Package, Search, AlertCircle, CheckCircle2, Star } from 'lucide-react';
+import { Edit2, Trash2, Package, Search, AlertCircle, CheckCircle2, Star, Download } from 'lucide-react';
 
 interface ProductItem {
   _id: string;
@@ -18,6 +18,7 @@ interface ProductItem {
   rating: number;
   isFeatured: boolean;
   isActive: boolean;
+  source?: 'manual' | 'csv_import';
   marketplaces?: Array<{ name: string; price: number | null; inStock: boolean }>;
 }
 
@@ -99,6 +100,19 @@ export default function AdminProductsPage() {
         subtitle="Manage product listings, cross-store prices, specifications, and deals"
         actionText="Add Product"
         actionHref="/admin/products/new"
+        secondaryActionText="Bulk Import Products"
+        secondaryActionHref="/admin/products/import"
+        extraActions={
+          <a
+            href="/api/products/export"
+            download
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-xl transition-colors shadow-2xs"
+            title="Export all products to CSV"
+          >
+            <Download size={13} />
+            <span>Export CSV</span>
+          </a>
+        }
       />
 
       <div className="p-6 max-w-7xl mx-auto space-y-4">
@@ -167,6 +181,7 @@ export default function AdminProductsPage() {
                     <th className="py-3 px-4">Price</th>
                     <th className="py-3 px-4">Deal Type</th>
                     <th className="py-3 px-4">Rating</th>
+                    <th className="py-3 px-4">Source</th>
                     <th className="py-3 px-4">Status</th>
                     <th className="py-3 px-4 text-right">Actions</th>
                   </tr>
@@ -205,6 +220,17 @@ export default function AdminProductsPage() {
                           <Star size={12} className="text-amber-500 fill-amber-500" />
                           <span>{prod.rating}</span>
                         </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            prod.source === 'csv_import'
+                              ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                              : 'bg-slate-100 text-slate-600'
+                          }`}
+                        >
+                          {prod.source === 'csv_import' ? 'CSV Import' : 'Manual'}
+                        </span>
                       </td>
                       <td className="py-3 px-4">
                         <span

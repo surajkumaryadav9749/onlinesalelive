@@ -48,6 +48,7 @@ export interface Product {
   featured?: boolean;
   trending?: boolean;
   badgeText?: string;
+  source?: 'manual' | 'csv_import';
   createdAt?: string;
 }
 

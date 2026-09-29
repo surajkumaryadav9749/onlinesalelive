@@ -50,7 +50,8 @@ const DiscoveryImage: React.FC<{
   alt: string;
   fallbackIcon: React.ReactNode;
   sizes: string;
-}> = ({ src, alt, fallbackIcon, sizes }) => {
+  objectFit?: 'cover' | 'contain';
+}> = ({ src, alt, fallbackIcon, sizes, objectFit = 'cover' }) => {
   const [hasError, setHasError] = useState(false);
   const trimmed = src && src.trim() !== '' ? src.trim() : null;
 
@@ -69,7 +70,7 @@ const DiscoveryImage: React.FC<{
       fill
       sizes={sizes}
       onError={() => setHasError(true)}
-      className="object-contain p-2 group-hover:scale-105 transition-transform duration-300"
+      className={`${objectFit === 'cover' ? 'object-cover' : 'object-contain p-2'} group-hover:scale-105 transition-transform duration-300 rounded-xl`}
     />
   );
 };

@@ -5,6 +5,12 @@ import { Product } from '@/models/Product';
 import { checkAdminAuth, errorResponse, successResponse, isValidId } from '@/lib/api-helpers';
 import { revalidateCatalog } from '@/lib/revalidate';
 
+import {
+  validateCategoryImageFile,
+  saveUploadedCategoryFile,
+  deleteUploadedCategoryFile,
+} from '@/lib/category-images';
+
 interface Params {
   params: Promise<{ id: string }>;
 }
@@ -35,14 +41,65 @@ export async function PUT(req: NextRequest, { params }: Params) {
     if (!conn) return errorResponse('Database connection failed', 503);
 
     const { id } = await params;
-    const body = await req.json();
-
     const query = isValidId(id) ? { _id: id } : { slug: id.toLowerCase() };
     const existing = await Category.findOne(query);
     if (!existing) return errorResponse('Category not found', 404);
 
-    if (body.slug && body.slug !== existing.slug) {
-      const normalizedSlug = String(body.slug).trim().toLowerCase();
+    const contentType = req.headers.get('content-type') || '';
+    let name: string | undefined;
+    let slug: string | undefined;
+    let description: string | undefined;
+    let icon: string | undefined;
+    let iconKey: string | undefined;
+    let image: string | undefined;
+    let imageUrl: string | undefined;
+    let featured: boolean | undefined;
+    let isActive: boolean | undefined;
+    let uploadedFile: File | null = null;
+    let removeImage = false;
+
+    if (contentType.includes('multipart/form-data')) {
+      const formData = await req.formData();
+      if (formData.has('name')) name = (formData.get('name') as string).trim();
+      if (formData.has('slug')) slug = (formData.get('slug') as string).trim();
+      if (formData.has('description')) description = (formData.get('description') as string).trim();
+      if (formData.has('icon')) icon = (formData.get('icon') as string).trim();
+      if (formData.has('iconKey')) iconKey = (formData.get('iconKey') as string).trim();
+      if (formData.has('image')) image = (formData.get('image') as string).trim();
+      if (formData.has('imageUrl')) imageUrl = (formData.get('imageUrl') as string).trim();
+
+      if (formData.has('featured')) {
+        const val = formData.get('featured');
+        featured = val === 'true' || val === '1';
+      }
+      if (formData.has('isActive')) {
+        const val = formData.get('isActive');
+        isActive = val === 'true' || val === '1';
+      }
+      if (formData.has('removeImage')) {
+        removeImage = formData.get('removeImage') === 'true';
+      }
+
+      const file = formData.get('file');
+      if (file && typeof file !== 'string') {
+        uploadedFile = file as File;
+      }
+    } else {
+      const body = await req.json();
+      if (body.name !== undefined) name = String(body.name).trim();
+      if (body.slug !== undefined) slug = String(body.slug).trim();
+      if (body.description !== undefined) description = String(body.description).trim();
+      if (body.icon !== undefined) icon = String(body.icon).trim();
+      if (body.iconKey !== undefined) iconKey = String(body.iconKey).trim();
+      if (body.image !== undefined) image = String(body.image).trim();
+      if (body.imageUrl !== undefined) imageUrl = String(body.imageUrl).trim();
+      if (body.featured !== undefined) featured = Boolean(body.featured);
+      if (body.isActive !== undefined) isActive = Boolean(body.isActive);
+      if (body.removeImage !== undefined) removeImage = Boolean(body.removeImage);
+    }
+
+    if (slug && slug !== existing.slug) {
+      const normalizedSlug = slug.toLowerCase();
       const duplicate = await Category.findOne({
         slug: normalizedSlug,
         _id: { $ne: existing._id },
@@ -53,12 +110,51 @@ export async function PUT(req: NextRequest, { params }: Params) {
       existing.slug = normalizedSlug;
     }
 
-    if (body.name !== undefined) existing.name = String(body.name).trim();
-    if (body.description !== undefined) existing.description = String(body.description).trim();
-    if (body.icon !== undefined) existing.icon = String(body.icon).trim();
-    if (body.image !== undefined) existing.image = String(body.image).trim();
-    if (body.featured !== undefined) existing.featured = Boolean(body.featured);
-    if (body.isActive !== undefined) existing.isActive = Boolean(body.isActive);
+    if (name !== undefined) existing.name = name;
+    if (description !== undefined) existing.description = description;
+
+    const chosenIcon = iconKey !== undefined ? iconKey : icon;
+    if (chosenIcon !== undefined) {
+      existing.icon = chosenIcon;
+      existing.iconKey = chosenIcon;
+    }
+
+    // Handle Image Replacement / Upload / Removal
+    const oldImage = existing.imageUrl || existing.image || '';
+
+    if (uploadedFile) {
+      const validation = validateCategoryImageFile(uploadedFile);
+      if (!validation.valid) {
+        return errorResponse(validation.error || 'Invalid category image file', 400);
+      }
+      const newImageUrl = await saveUploadedCategoryFile(uploadedFile, existing.slug);
+
+      // Clean up old file if it was an uploaded file
+      if (oldImage && oldImage !== newImageUrl) {
+        await deleteUploadedCategoryFile(oldImage, existing._id.toString());
+      }
+
+      existing.imageUrl = newImageUrl;
+      existing.image = newImageUrl;
+    } else if (removeImage) {
+      if (oldImage) {
+        await deleteUploadedCategoryFile(oldImage, existing._id.toString());
+      }
+      existing.imageUrl = '';
+      existing.image = '';
+    } else if (imageUrl !== undefined || image !== undefined) {
+      const newImageVal = (imageUrl !== undefined ? imageUrl : image) || '';
+
+      if (oldImage && oldImage !== newImageVal) {
+        await deleteUploadedCategoryFile(oldImage, existing._id.toString());
+      }
+
+      existing.imageUrl = newImageVal;
+      existing.image = newImageVal;
+    }
+
+    if (featured !== undefined) existing.featured = featured;
+    if (isActive !== undefined) existing.isActive = isActive;
 
     await existing.save();
     revalidateCatalog(undefined, existing.slug);
@@ -92,7 +188,15 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     }
 
     const catSlug = category.slug;
+    const imageToDelete = category.imageUrl || category.image || '';
+
     await Category.deleteOne({ _id: category._id });
+
+    // Clean up uploaded image if exists
+    if (imageToDelete) {
+      await deleteUploadedCategoryFile(imageToDelete, category._id.toString());
+    }
+
     revalidateCatalog(undefined, catSlug);
     return successResponse({ message: 'Category deleted successfully', id: category._id });
   } catch (err) {

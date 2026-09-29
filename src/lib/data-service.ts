@@ -119,10 +119,13 @@ interface RawCategoryDoc {
   name: string;
   slug: string;
   icon?: string;
+  iconKey?: string;
   description?: string;
   itemCount?: number;
   image?: string;
+  imageUrl?: string;
   featured?: boolean;
+  isActive?: boolean;
 }
 
 interface RawDealDoc {
@@ -267,15 +270,20 @@ function mapProduct(doc: RawProductDoc): Product {
 }
 
 function mapCategory(doc: RawCategoryDoc): Category {
+  const finalImage = doc.imageUrl || doc.image || '';
+  const finalIcon = doc.iconKey || doc.icon || 'Tag';
   return {
     id: String(doc._id),
     name: doc.name,
     slug: doc.slug,
-    icon: doc.icon || 'Tag',
+    icon: finalIcon,
+    iconKey: finalIcon,
     description: doc.description || '',
     itemCount: doc.itemCount || 0,
-    image: doc.image || '',
+    image: finalImage,
+    imageUrl: finalImage,
     featured: Boolean(doc.featured),
+    isActive: doc.isActive !== false,
   };
 }
 
@@ -1797,7 +1805,9 @@ export async function getHomepageDiscoveryData(): Promise<HomepageDiscoveryData>
         name: string;
         slug: string;
         icon?: string;
+        iconKey?: string;
         image?: string;
+        imageUrl?: string;
         itemCount?: number;
       };
 
@@ -1833,12 +1843,14 @@ export async function getHomepageDiscoveryData(): Promise<HomepageDiscoveryData>
       for (const item of discount50Agg) {
         const cat = activeCategoryMap.get(item._id);
         if (cat && item.count > 0) {
+          const catImg = cat.imageUrl || cat.image || '';
+          const catIco = cat.iconKey || cat.icon || 'Tv';
           discountCategories.push({
             slug: cat.slug,
             name: cat.name,
             count: item.count,
-            image: item.sampleImage || cat.image || '',
-            icon: cat.icon || 'Tv',
+            image: item.sampleImage || catImg,
+            icon: catIco,
           });
         }
       }
@@ -1890,8 +1902,8 @@ export async function getHomepageDiscoveryData(): Promise<HomepageDiscoveryData>
         id: c._id.toString(),
         slug: c.slug,
         name: c.name,
-        image: c.image || '',
-        icon: c.icon || 'Tv',
+        image: c.imageUrl || c.image || '',
+        icon: c.iconKey || c.icon || 'Tv',
         itemCount: c.itemCount || 0,
       }));
 
@@ -1920,12 +1932,14 @@ export async function getHomepageDiscoveryData(): Promise<HomepageDiscoveryData>
       for (const cat of mockCategories) {
         const info = catCountMap.get(cat.slug.toLowerCase());
         if (info && info.count > 0) {
+          const catImg = cat.imageUrl || cat.image || '';
+          const catIco = cat.iconKey || cat.icon || 'Tv';
           discountCategories.push({
             slug: cat.slug,
             name: cat.name,
             count: info.count,
-            image: info.sampleImage || cat.image || '',
-            icon: cat.icon || 'Tv',
+            image: info.sampleImage || catImg,
+            icon: catIco,
           });
         }
       }
@@ -1954,8 +1968,8 @@ export async function getHomepageDiscoveryData(): Promise<HomepageDiscoveryData>
         id: c.id,
         slug: c.slug,
         name: c.name,
-        image: c.image || '',
-        icon: c.icon || 'Tv',
+        image: c.imageUrl || c.image || '',
+        icon: c.iconKey || c.icon || 'Tv',
         itemCount: c.itemCount || 0,
       }));
 

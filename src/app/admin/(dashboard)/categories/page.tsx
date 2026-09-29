@@ -2,15 +2,51 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { AdminHeader } from '@/components/admin/AdminHeader';
-import { Edit2, Trash2, Layers, Search, AlertCircle, CheckCircle2 } from 'lucide-react';
+import {
+  Edit2,
+  Trash2,
+  Layers,
+  Search,
+  AlertCircle,
+  CheckCircle2,
+  Tv,
+  Smartphone,
+  Laptop,
+  Shirt,
+  Footprints,
+  Sparkles,
+  Home,
+  Watch,
+  Headphones,
+  Tag,
+  ShoppingBag,
+} from 'lucide-react';
+
+const categoryIconMap: Record<string, React.ElementType> = {
+  Tv,
+  Smartphone,
+  Laptop,
+  Shirt,
+  Footprints,
+  Sparkles,
+  Home,
+  Watch,
+  Headphones,
+  ShoppingBag,
+  Tag,
+};
 
 interface CategoryItem {
   _id: string;
   name: string;
   slug: string;
   icon: string;
+  iconKey?: string;
   description: string;
+  image?: string;
+  imageUrl?: string;
   itemCount: number;
   featured: boolean;
   isActive: boolean;
@@ -136,6 +172,7 @@ export default function AdminCategoriesPage() {
               <table className="w-full text-left text-xs text-slate-600">
                 <thead className="bg-slate-50 text-[11px] font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
                   <tr>
+                    <th className="py-3 px-4 w-14">Image</th>
                     <th className="py-3 px-4">Name</th>
                     <th className="py-3 px-4">Slug</th>
                     <th className="py-3 px-4">Icon</th>
@@ -146,9 +183,30 @@ export default function AdminCategoriesPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {filtered.map((cat) => (
-                    <tr key={cat._id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="py-3 px-4 font-bold text-slate-900">{cat.name}</td>
+                  {filtered.map((cat) => {
+                    const imageSrc = cat.imageUrl || cat.image || '';
+                    const IconComp = categoryIconMap[cat.iconKey || cat.icon] || Tv;
+
+                    return (
+                      <tr key={cat._id} className="hover:bg-slate-50/50 transition-colors">
+                        <td className="py-2.5 px-4">
+                          {imageSrc ? (
+                            <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-slate-200 bg-slate-50 shrink-0 shadow-2xs">
+                              <Image
+                                src={imageSrc}
+                                alt={cat.name}
+                                fill
+                                sizes="40px"
+                                className="object-cover"
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-10 h-10 rounded-lg bg-orange-50 text-orange-600 border border-orange-100 flex items-center justify-center shrink-0 shadow-2xs" title={`Icon: ${cat.icon}`}>
+                              <IconComp size={18} />
+                            </div>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 font-bold text-slate-900">{cat.name}</td>
                       <td className="py-3 px-4 font-mono text-[11px] text-slate-500">{cat.slug}</td>
                       <td className="py-3 px-4">
                         <span className="bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-mono text-[10px]">
@@ -196,8 +254,9 @@ export default function AdminCategoriesPage() {
                         </div>
                       </td>
                     </tr>
-                  ))}
-                </tbody>
+                  );
+                })}
+              </tbody>
               </table>
             </div>
           )}

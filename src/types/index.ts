@@ -61,9 +61,11 @@ export interface Category {
   name: string;
   slug: string;
   icon: string;
+  iconKey?: string;
   description: string;
   itemCount: number;
   image?: string;
+  imageUrl?: string;
   featured?: boolean;
   isActive?: boolean;
   displayOrder?: number;

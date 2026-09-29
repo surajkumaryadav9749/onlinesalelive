@@ -10,6 +10,7 @@ import { Article } from '@/models/Article';
 import { Comparison } from '@/models/Comparison';
 import { AffiliateClick } from '@/models/AffiliateClick';
 import { AdminHeader } from '@/components/admin/AdminHeader';
+import { AffiliateAnalyticsSection } from '@/components/admin/AffiliateAnalyticsSection';
 import {
   Package,
   Layers,
@@ -273,6 +274,9 @@ export default async function AdminDashboardPage() {
             })}
           </div>
         </div>
+
+        {/* Amazon Affiliate Analytics Section */}
+        <AffiliateAnalyticsSection />
 
         {/* Recent Products Table */}
         <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs">

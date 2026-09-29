@@ -1,7 +1,7 @@
 import path from 'path';
-import fs from 'fs/promises';
 import { HeroBanner } from '@/models/HeroBanner';
 import { connectToDatabase } from '@/lib/db';
+import { uploadFileToStorage, deleteFileFromStorage } from '@/lib/storage';
 
 export const MAX_ACTIVE_HERO_BANNERS = 5;
 export const MAX_BANNER_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
@@ -51,29 +51,29 @@ export function validateBannerImageFile(file: File): { valid: boolean; error?: s
 }
 
 /**
- * Saves uploaded image file to `public/uploads/banners` and returns the public URL.
+ * Saves uploaded image file to persistent object storage (Vercel Blob / persistent store) and returns the public URL.
+ * Guarantees zero local filesystem dependency on read-only serverless environments like Vercel.
  */
 export async function saveUploadedBannerFile(file: File): Promise<string> {
-  const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'banners');
-  await fs.mkdir(uploadsDir, { recursive: true });
+  return uploadFileToStorage(file, 'banners');
+}
 
-  const ext = path.extname(file.name || '').toLowerCase() || '.webp';
-  const rawBaseName = path.basename(file.name || 'banner', ext);
-  const safeBaseName = rawBaseName.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 40);
-  const uniqueName = `${Date.now()}-${safeBaseName}${ext}`;
-
-  const filePath = path.join(uploadsDir, uniqueName);
-  const buffer = Buffer.from(await file.arrayBuffer());
-  await fs.writeFile(filePath, buffer);
-
-  return `/uploads/banners/${uniqueName}`;
+/**
+ * Safely deletes an uploaded banner image file from persistent object storage.
+ * Ensures the object is deleted if no other banner record references it.
+ */
+export async function deleteUploadedBannerFile(
+  imageUrl: string,
+  excludeBannerId?: string
+): Promise<boolean> {
+  return deleteFileFromStorage(imageUrl, 'banners', excludeBannerId);
 }
 
 /**
  * Enforces that at most 5 banners remain active.
  * When a new active banner is added (or existing activated), if total active exceeds 5,
  * the oldest active banners are deactivated (isActive set to false).
- * Historical records are preserved.
+ * Historical records are preserved without deleting images or database entries.
  */
 export async function enforceMaxActiveBanners(
   activatingCount: number = 1,

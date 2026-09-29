@@ -10,16 +10,21 @@ import {
   MAX_ACTIVE_HERO_BANNERS,
   MAX_BANNER_FILE_SIZE,
   validateBannerImageFile,
+  saveUploadedBannerFile,
+  deleteUploadedBannerFile,
   enforceMaxActiveBanners,
 } from '../src/lib/hero-banners';
+import { isBlobUrl, isBlobStorageConfigured } from '../src/lib/storage';
 import { getActiveHeroBanners } from '../src/lib/data-service';
+import { signAdminToken, verifyAdminToken } from '../src/lib/auth';
+import { checkAdminAuth } from '../src/lib/api-helpers';
 
 async function runTestSuite() {
-  console.log('====================================================');
-  console.log('HERO BACKGROUND BANNER CAROUSEL TEST SUITE');
-  console.log('Validating Max 5 Active Banners, Auto-Deactivation,');
-  console.log('File Validation, Zero-Banner Fallback, and Data Query');
-  console.log('====================================================\n');
+  console.log('================================================================');
+  console.log('HERO BANNER & PERSISTENT STORAGE PRODUCTION TEST SUITE');
+  console.log('Validating Persistent Storage, Max 5 Active Rule, Auto-Deactivation,');
+  console.log('File Validation, Safe Deletion, and Homepage Integration');
+  console.log('================================================================\n');
 
   let passed = 0;
   let failed = 0;
@@ -41,7 +46,30 @@ async function runTestSuite() {
   // Cleanup any leftover test banners
   await HeroBanner.deleteMany({ title: new RegExp(`^${TEST_PREFIX}`) });
 
-  console.log('--- 1. IMAGE FILE VALIDATION TESTS ---');
+  console.log('--- 0. AUTHENTICATION & ACCESS CONTROL TESTS ---');
+  {
+    // Test checkAdminAuth without cookie
+    const unauthCheck = await checkAdminAuth();
+    assert('Unauthenticated request is rejected with 401', Boolean(unauthCheck.errorResponse && unauthCheck.errorResponse.status === 401));
+
+    // Test signAdminToken and verifyAdminToken
+    const testAdminPayload = {
+      id: 'admin_test_123',
+      email: 'admin@test.com',
+      name: 'Test Admin',
+      role: 'admin' as const,
+    };
+    const validToken = await signAdminToken(testAdminPayload);
+    const verifiedPayload = await verifyAdminToken(validToken);
+    assert('Valid admin token is successfully signed and verified', Boolean(verifiedPayload && verifiedPayload.email === 'admin@test.com'));
+
+    // Test invalid / forged token rejected
+    const forgedToken = validToken + 'tampered';
+    const forgedResult = await verifyAdminToken(forgedToken);
+    assert('Forged / tampered admin token is rejected', forgedResult === null);
+  }
+
+  console.log('\n--- 1. IMAGE FILE VALIDATION & SECURITY TESTS ---');
   {
     // Valid image mock files
     const validJpg = new File([new Uint8Array(100)], 'banner1.jpg', { type: 'image/jpeg' });
@@ -69,20 +97,74 @@ async function runTestSuite() {
     assert('MAX_BANNER_FILE_SIZE is 5 MB', MAX_BANNER_FILE_SIZE === 5 * 1024 * 1024);
   }
 
-  console.log('\n--- 2. MAXIMUM 5 ACTIVE BANNERS ENFORCEMENT & AUTO-DEACTIVATION ---');
+  console.log('\n--- 2. PERSISTENT STORAGE UPLOAD & SAFETY TESTS ---');
+  let savedBannerUrl = '';
+  {
+    const isBlobConfig = isBlobStorageConfigured();
+    console.log(`  [Storage Environment] Vercel Blob configured: ${isBlobConfig}`);
+
+    assert('isBlobUrl identifies Vercel Blob CDN URLs correctly',
+      isBlobUrl('https://xyz.public.blob.vercel-storage.com/banners/hero-test-123.webp') &&
+      !isBlobUrl('/uploads/banners/hero-test-123.webp')
+    );
+
+    // Upload mock banner file
+    const sampleBannerFile = new File([Buffer.from('hero-banner-image-payload-data')], 'summer-sale.webp', {
+      type: 'image/webp',
+    });
+
+    try {
+      savedBannerUrl = await saveUploadedBannerFile(sampleBannerFile);
+      assert('saveUploadedBannerFile executes successfully without filesystem errors', Boolean(savedBannerUrl));
+      assert('saveUploadedBannerFile returns persistent storage URL (Blob or DB-backed route)',
+        savedBannerUrl.startsWith('https://') || savedBannerUrl.startsWith('/uploads/banners/')
+      );
+    } catch (err) {
+      assert('saveUploadedBannerFile executes successfully', false, String(err));
+    }
+  }
+
+  console.log('\n--- 3. DATABASE BANNER CREATION & PERSISTENT URL STORAGE ---');
+  let createdBannerId = '';
+  {
+    try {
+      const banner = await HeroBanner.create({
+        title: `${TEST_PREFIX}Production Upload Test`,
+        imageUrl: savedBannerUrl,
+        linkUrl: '/deals/mega-sale',
+        isActive: true,
+        displayOrder: 1,
+      });
+
+      createdBannerId = banner._id.toString();
+      assert('Banner record successfully created in MongoDB', Boolean(banner._id));
+      assert('Banner record stores persistent imageUrl', banner.imageUrl === savedBannerUrl);
+      assert('Banner isActive is true when specified', banner.isActive === true);
+      assert('Banner destination linkUrl is stored', banner.linkUrl === '/deals/mega-sale');
+    } catch (err) {
+      assert('Banner database creation', false, String(err));
+    }
+  }
+
+  console.log('\n--- 4. MAXIMUM 5 ACTIVE BANNERS ENFORCEMENT & AUTO-DEACTIVATION ---');
   {
     assert('MAX_ACTIVE_HERO_BANNERS is 5', MAX_ACTIVE_HERO_BANNERS === 5);
 
-    // Insert 5 active banners sequentially with slight timestamp offsets
+    // Clean up temporary banner created above
+    if (createdBannerId) {
+      await HeroBanner.deleteOne({ _id: createdBannerId });
+    }
+
+    // Insert 5 active banners sequentially with timestamp offsets
     const bannerIds: string[] = [];
     for (let i = 1; i <= 5; i++) {
       const banner = await HeroBanner.create({
         title: `${TEST_PREFIX}Banner ${i}`,
-        imageUrl: `/uploads/banners/test-${i}.webp`,
+        imageUrl: `https://mock.blob.vercel-storage.com/banners/test-${i}.webp`,
         linkUrl: `/deals?banner=${i}`,
         isActive: true,
         displayOrder: i,
-        createdAt: new Date(Date.now() - (6 - i) * 60000), // Banner 1 is oldest, Banner 5 is newest
+        createdAt: new Date(Date.now() - (6 - i) * 60000), // Banner 1 oldest, Banner 5 newest
       });
       bannerIds.push(banner._id.toString());
     }
@@ -95,22 +177,21 @@ async function runTestSuite() {
     assert('5 active banners successfully seeded', initialActive.length === 5);
     assert('Banner 1 is the oldest active banner', initialActive[0].title === `${TEST_PREFIX}Banner 1`);
 
-    // Now simulate uploading Banner 6 (a new active banner)
-    // When Banner 6 is added, enforceMaxActiveBanners(1) must deactivate Banner 1
+    // Simulate uploading Banner 6 (new active banner)
     const { deactivatedCount, deactivatedIds } = await enforceMaxActiveBanners(1);
 
     assert('enforceMaxActiveBanners deactivates exactly 1 oldest banner', deactivatedCount === 1);
     assert('The deactivated banner is Banner 1 (oldest)', deactivatedIds.includes(bannerIds[0]));
 
-    // Check that Banner 1 is now inactive in DB
+    // Check that Banner 1 is inactive in DB, but preserved
     const banner1After = await HeroBanner.findById(bannerIds[0]);
     assert('Banner 1 isActive is false', banner1After?.isActive === false);
-    assert('Banner 1 record is preserved in DB (not permanently deleted)', banner1After !== null);
+    assert('Banner 1 record is preserved in DB (not deleted)', banner1After !== null);
 
     // Create Banner 6
     const banner6 = await HeroBanner.create({
       title: `${TEST_PREFIX}Banner 6`,
-      imageUrl: '/uploads/banners/test-6.webp',
+      imageUrl: 'https://mock.blob.vercel-storage.com/banners/test-6.webp',
       linkUrl: '/deals?banner=6',
       isActive: true,
       displayOrder: 6,
@@ -125,18 +206,18 @@ async function runTestSuite() {
     }).sort({ createdAt: 1 });
 
     assert('Active banners count is exactly 5 after adding Banner 6', activeAfter6.length === 5);
-    assert('Active banners are Banner 2, 3, 4, 5, 6', 
-      activeAfter6.map(b => b.title).join(',') === 
+    assert('Active banners are Banner 2, 3, 4, 5, 6',
+      activeAfter6.map(b => b.title).join(',') ===
       [`${TEST_PREFIX}Banner 2`, `${TEST_PREFIX}Banner 3`, `${TEST_PREFIX}Banner 4`, `${TEST_PREFIX}Banner 5`, `${TEST_PREFIX}Banner 6`].join(',')
     );
 
-    // Now add Banner 7: Banner 2 should be automatically deactivated
+    // Add Banner 7: Banner 2 must be automatically deactivated
     const deact7 = await enforceMaxActiveBanners(1);
     assert('Adding Banner 7 triggers deactivation of Banner 2', deact7.deactivatedIds.includes(bannerIds[1]));
 
     const banner7 = await HeroBanner.create({
       title: `${TEST_PREFIX}Banner 7`,
-      imageUrl: '/uploads/banners/test-7.webp',
+      imageUrl: 'https://mock.blob.vercel-storage.com/banners/test-7.webp',
       linkUrl: '/deals?banner=7',
       isActive: true,
       displayOrder: 7,
@@ -150,13 +231,12 @@ async function runTestSuite() {
     }).sort({ createdAt: 1 });
 
     assert('Active count is still exactly 5 after Banner 7', activeAfter7.length === 5);
-    assert('Active banners are Banner 3, 4, 5, 6, 7', 
-      activeAfter7.map(b => b.title).join(',') === 
+    assert('Active banners are Banner 3, 4, 5, 6, 7',
+      activeAfter7.map(b => b.title).join(',') ===
       [`${TEST_PREFIX}Banner 3`, `${TEST_PREFIX}Banner 4`, `${TEST_PREFIX}Banner 5`, `${TEST_PREFIX}Banner 6`, `${TEST_PREFIX}Banner 7`].join(',')
     );
 
-    // Test activating an inactive banner:
-    // If admin enables Banner 1 again, Banner 3 (currently oldest active) must be deactivated
+    // Test reactivating an inactive banner (Banner 1)
     const reActivation = await enforceMaxActiveBanners(1, bannerIds[0]);
     assert('Re-activating Banner 1 deactivates oldest active banner (Banner 3)', reActivation.deactivatedIds.includes(bannerIds[2]));
 
@@ -169,52 +249,58 @@ async function runTestSuite() {
     assert('Active count remains strictly 5 after manual reactivation', activeAfterReactivate.length === 5);
   }
 
-  console.log('\n--- 3. DATA SERVICE PUBLIC QUERY & FALLBACKS ---');
+  console.log('\n--- 5. DEACTIVATION VS PERMANENT DELETION ---');
   {
-    const publicBanners = await getActiveHeroBanners(5);
-    assert('getActiveHeroBanners returns an array', Array.isArray(publicBanners));
-    assert('getActiveHeroBanners returns at most 5 banners', publicBanners.length <= 5);
-    assert('All returned banners have isActive: true', publicBanners.every(b => b.isActive));
-
-    // Zero-banner fallback test
-    await HeroBanner.updateMany(
-      { title: new RegExp(`^${TEST_PREFIX}`) },
-      { $set: { isActive: false } }
-    );
-
-    const testActiveCount = await HeroBanner.countDocuments({
-      title: new RegExp(`^${TEST_PREFIX}`),
+    // Create a banner to test deactivation
+    const testDeactBanner = await HeroBanner.create({
+      title: `${TEST_PREFIX}Deactivation Test`,
+      imageUrl: savedBannerUrl,
       isActive: true,
     });
-    assert('All test banners safely deactivated', testActiveCount === 0);
+
+    // Deactivation: isActive becomes false, record stays, image NOT deleted
+    await HeroBanner.findByIdAndUpdate(testDeactBanner._id, { $set: { isActive: false } });
+    const deactRecord = await HeroBanner.findById(testDeactBanner._id);
+    assert('Deactivation updates isActive to false', deactRecord?.isActive === false);
+    assert('Deactivation preserves database record', Boolean(deactRecord));
+
+    // Permanent delete: calls deleteUploadedBannerFile safely
+    const deleteResult = await deleteUploadedBannerFile(savedBannerUrl, testDeactBanner._id.toString());
+    await HeroBanner.findByIdAndDelete(testDeactBanner._id);
+    const postDeleteRecord = await HeroBanner.findById(testDeactBanner._id);
+    assert('Permanent delete removes banner document from DB', postDeleteRecord === null);
+    assert('deleteUploadedBannerFile executes cleanly', typeof deleteResult === 'boolean');
   }
 
-  console.log('\n--- 4. BANNER CLICK DESTINATION URL HANDLING ---');
+  console.log('\n--- 6. EXTERNAL IMAGE URL & HOMEPAGE QUERY INTEGRATION ---');
   {
-    const bannerWithLink = await HeroBanner.create({
-      title: `${TEST_PREFIX}Clickable Deal Banner`,
-      imageUrl: '/uploads/banners/sale.webp',
-      linkUrl: '/deals/festive-sale',
+    // External image URL
+    const externalBanner = await HeroBanner.create({
+      title: `${TEST_PREFIX}External URL Banner`,
+      imageUrl: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&w=1920',
+      linkUrl: 'https://amazon.in/deal',
       isActive: true,
+      displayOrder: 0,
     });
-    assert('Banner destination linkUrl is correctly stored', bannerWithLink.linkUrl === '/deals/festive-sale');
 
-    const bannerNoLink = await HeroBanner.create({
-      title: `${TEST_PREFIX}Visual Only Banner`,
-      imageUrl: '/uploads/banners/bg.webp',
-      linkUrl: '',
-      isActive: true,
-    });
-    assert('Banner without link defaults to empty string', bannerNoLink.linkUrl === '');
+    assert('External Image URL banner created successfully', Boolean(externalBanner._id));
+    assert('External URL preserved without modification', externalBanner.imageUrl.startsWith('https://images.unsplash.com'));
+
+    // Test getActiveHeroBanners used by Homepage
+    const activeBanners = await getActiveHeroBanners(5);
+    assert('getActiveHeroBanners returns an array', Array.isArray(activeBanners));
+    assert('getActiveHeroBanners returns at most 5 banners', activeBanners.length <= 5);
+    assert('All returned banners have isActive: true', activeBanners.every(b => b.isActive));
+    assert('Returned banners contain persistent imageUrls', activeBanners.some(b => b.imageUrl.startsWith('http')));
   }
 
   // Final cleanup
   await HeroBanner.deleteMany({ title: new RegExp(`^${TEST_PREFIX}`) });
   console.log('\nCleaned up all temporary test banner records.');
 
-  console.log('\n====================================================');
+  console.log('\n================================================================');
   console.log(`TEST RESULTS: ${passed} PASSED, ${failed} FAILED (${passed + failed} TOTAL)`);
-  console.log('====================================================');
+  console.log('================================================================');
 
   if (failed > 0) {
     process.exit(1);

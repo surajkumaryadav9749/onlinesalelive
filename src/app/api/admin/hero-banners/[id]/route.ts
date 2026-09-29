@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { connectToDatabase } from '@/lib/db';
 import { HeroBanner } from '@/models/HeroBanner';
 import { checkAdminAuth, errorResponse, successResponse, isValidId } from '@/lib/api-helpers';
-import { enforceMaxActiveBanners } from '@/lib/hero-banners';
+import { enforceMaxActiveBanners, deleteUploadedBannerFile } from '@/lib/hero-banners';
 import { revalidateHeroBanners } from '@/lib/revalidate';
 
 interface RouteContext {
@@ -106,10 +106,16 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
     const permanent = url.searchParams.get('permanent') === 'true';
 
     if (permanent) {
-      const deleted = await HeroBanner.findByIdAndDelete(id);
-      if (!deleted) {
+      const existing = await HeroBanner.findById(id);
+      if (!existing) {
         return errorResponse('Banner not found', 404);
       }
+
+      if (existing.imageUrl) {
+        await deleteUploadedBannerFile(existing.imageUrl, id);
+      }
+
+      await HeroBanner.findByIdAndDelete(id);
     } else {
       const banner = await HeroBanner.findByIdAndUpdate(
         id,

@@ -62,7 +62,11 @@ export function filterAndSortProducts(
     result = result.filter((p) => p.price >= (filters.minPrice ?? 0));
   }
   if (filters.maxPrice !== undefined) {
-    result = result.filter((p) => p.price <= (filters.maxPrice ?? Infinity));
+    result = result.filter((p) =>
+      filters.maxPriceExclusive
+        ? p.price < (filters.maxPrice ?? Infinity)
+        : p.price <= (filters.maxPrice ?? Infinity)
+    );
   }
 
   // Product Discount Range (10% OFF, 20% OFF, ... 90%+ OFF)

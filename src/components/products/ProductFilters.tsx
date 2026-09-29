@@ -68,6 +68,44 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
         )}
       </div>
 
+      {/* Active Quick Badges */}
+      {(filters.minDiscount || filters.maxPrice) && (
+        <div className="flex flex-wrap gap-1.5 -mt-3 pb-1">
+          {filters.minDiscount && (
+            <span className="inline-flex items-center gap-1 text-xs bg-orange-100 text-orange-800 px-2.5 py-1 rounded-full font-semibold">
+              {filters.minDiscount}%+ Off Deals
+              <button
+                type="button"
+                onClick={() => onChange({ ...filters, minDiscount: undefined })}
+                className="hover:text-orange-950 font-bold ml-0.5 cursor-pointer"
+                aria-label="Remove minimum discount filter"
+              >
+                ×
+              </button>
+            </span>
+          )}
+          {filters.maxPrice && (
+            <span className="inline-flex items-center gap-1 text-xs bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full font-semibold">
+              {filters.maxPriceExclusive ? `< ₹${filters.maxPrice}` : `≤ ₹${filters.maxPrice}`}
+              <button
+                type="button"
+                onClick={() =>
+                  onChange({
+                    ...filters,
+                    maxPrice: undefined,
+                    maxPriceExclusive: undefined,
+                  })
+                }
+                className="hover:text-emerald-950 font-bold ml-0.5 cursor-pointer"
+                aria-label="Remove price filter"
+              >
+                ×
+              </button>
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Category Filter */}
       {showCategoryFilter && (
         <div>

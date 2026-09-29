@@ -14,6 +14,10 @@ import {
   BlogPost,
   ComparisonItem,
   HeroBanner,
+  HomepageDiscoveryData,
+  DiscountCategoryItem,
+  BudgetTierItem,
+  DiscoveryCategoryItem,
 } from '@/types';
 import { connectToDatabase } from '@/lib/db';
 import { calculateDiscount, getDealStatus, isDealCurrentlyActive } from '@/lib/deal-utils';
@@ -1771,6 +1775,196 @@ export async function getActiveHeroBanners(limit: number = 5): Promise<HeroBanne
       }));
     },
     () => []
+  );
+}
+
+/**
+ * Retrieve aggregated discovery data for the homepage:
+ * 1. 50%+ Off Categories (only categories with active products having discountPercent >= 50, sorted by product count desc)
+ * 2. Budget Tiers (Under ₹299, ₹399, ₹499, ₹599, ₹699, ₹799, ₹899 where count > 0, ascending)
+ * 3. Shop by Category (all active admin-created categories)
+ */
+export async function getHomepageDiscoveryData(): Promise<HomepageDiscoveryData> {
+  return withDbFallback(
+    async () => {
+      // 1. Fetch active categories
+      const activeCategories = await CategoryModel.find({ isActive: true })
+        .sort({ featured: -1, itemCount: -1, name: 1 })
+        .lean();
+
+      type CategoryDoc = {
+        _id: { toString(): string };
+        name: string;
+        slug: string;
+        icon?: string;
+        image?: string;
+        itemCount?: number;
+      };
+
+      const activeCategoryMap = new Map<string, CategoryDoc>(
+        (activeCategories as unknown as CategoryDoc[]).map((c) => [c.slug.toLowerCase(), c])
+      );
+
+      // 2. Aggregate 50%+ Off categories with product counts and representative image
+      const discount50Agg = await ProductModel.aggregate([
+        {
+          $match: {
+            isActive: true,
+            discountPercent: { $gte: 50, $lte: 100 },
+          },
+        },
+        {
+          $sort: { discountPercent: -1, createdAt: -1 },
+        },
+        {
+          $group: {
+            _id: { $toLower: '$categorySlug' },
+            count: { $sum: 1 },
+            sampleImage: { $first: '$image' },
+            sampleTitle: { $first: '$name' },
+          },
+        },
+        {
+          $sort: { count: -1 },
+        },
+      ]);
+
+      const discountCategories: DiscountCategoryItem[] = [];
+      for (const item of discount50Agg) {
+        const cat = activeCategoryMap.get(item._id);
+        if (cat && item.count > 0) {
+          discountCategories.push({
+            slug: cat.slug,
+            name: cat.name,
+            count: item.count,
+            image: item.sampleImage || cat.image || '',
+            icon: cat.icon || 'Tv',
+          });
+        }
+      }
+
+      // 3. Aggregate budget counts in a single query
+      const budgetCountsAgg = await ProductModel.aggregate([
+        {
+          $match: {
+            isActive: true,
+            price: { $lt: 899 },
+          },
+        },
+        {
+          $group: {
+            _id: null,
+            under299: { $sum: { $cond: [{ $lt: ['$price', 299] }, 1, 0] } },
+            under399: { $sum: { $cond: [{ $lt: ['$price', 399] }, 1, 0] } },
+            under499: { $sum: { $cond: [{ $lt: ['$price', 499] }, 1, 0] } },
+            under599: { $sum: { $cond: [{ $lt: ['$price', 599] }, 1, 0] } },
+            under699: { $sum: { $cond: [{ $lt: ['$price', 699] }, 1, 0] } },
+            under799: { $sum: { $cond: [{ $lt: ['$price', 799] }, 1, 0] } },
+            under899: { $sum: { $cond: [{ $lt: ['$price', 899] }, 1, 0] } },
+          },
+        },
+      ]);
+
+      const counts = (budgetCountsAgg[0] || {}) as Record<string, number>;
+      const budgetTiersRaw = [
+        { amount: 299, count: counts.under299 || 0 },
+        { amount: 399, count: counts.under399 || 0 },
+        { amount: 499, count: counts.under499 || 0 },
+        { amount: 599, count: counts.under599 || 0 },
+        { amount: 699, count: counts.under699 || 0 },
+        { amount: 799, count: counts.under799 || 0 },
+        { amount: 899, count: counts.under899 || 0 },
+      ];
+
+      const budgetTiers: BudgetTierItem[] = budgetTiersRaw
+        .filter((t) => t.count > 0)
+        .map((t) => ({
+          label: `Under ₹${t.amount}`,
+          amount: t.amount,
+          count: t.count,
+          href: `/products?maxPrice=${t.amount}`,
+        }));
+
+      // 4. All active categories
+      const categories: DiscoveryCategoryItem[] = (activeCategories as unknown as CategoryDoc[]).map((c) => ({
+        id: c._id.toString(),
+        slug: c.slug,
+        name: c.name,
+        image: c.image || '',
+        icon: c.icon || 'Tv',
+        itemCount: c.itemCount || 0,
+      }));
+
+      return {
+        discountCategories,
+        budgetTiers,
+        categories,
+      };
+    },
+    // Mock fallback when DB is disconnected
+    () => {
+      // Qualifying mock products with discount >= 50
+      const qualifyingProducts = mockProducts.filter((p) => p.discountPercent >= 50);
+      const catCountMap = new Map<string, { count: number; sampleImage: string }>();
+      for (const p of qualifyingProducts) {
+        const slug = (p.categorySlug || p.category).toLowerCase();
+        const existing = catCountMap.get(slug);
+        if (existing) {
+          existing.count++;
+        } else {
+          catCountMap.set(slug, { count: 1, sampleImage: p.image });
+        }
+      }
+
+      const discountCategories: DiscountCategoryItem[] = [];
+      for (const cat of mockCategories) {
+        const info = catCountMap.get(cat.slug.toLowerCase());
+        if (info && info.count > 0) {
+          discountCategories.push({
+            slug: cat.slug,
+            name: cat.name,
+            count: info.count,
+            image: info.sampleImage || cat.image || '',
+            icon: cat.icon || 'Tv',
+          });
+        }
+      }
+      discountCategories.sort((a, b) => b.count - a.count);
+
+      const budgetTiersRaw = [
+        { amount: 299, count: mockProducts.filter((p) => p.price < 299).length },
+        { amount: 399, count: mockProducts.filter((p) => p.price < 399).length },
+        { amount: 499, count: mockProducts.filter((p) => p.price < 499).length },
+        { amount: 599, count: mockProducts.filter((p) => p.price < 599).length },
+        { amount: 699, count: mockProducts.filter((p) => p.price < 699).length },
+        { amount: 799, count: mockProducts.filter((p) => p.price < 799).length },
+        { amount: 899, count: mockProducts.filter((p) => p.price < 899).length },
+      ];
+
+      const budgetTiers: BudgetTierItem[] = budgetTiersRaw
+        .filter((t) => t.count > 0)
+        .map((t) => ({
+          label: `Under ₹${t.amount}`,
+          amount: t.amount,
+          count: t.count,
+          href: `/products?maxPrice=${t.amount}`,
+        }));
+
+      const categories: DiscoveryCategoryItem[] = mockCategories.map((c) => ({
+        id: c.id,
+        slug: c.slug,
+        name: c.name,
+        image: c.image || '',
+        icon: c.icon || 'Tv',
+        itemCount: c.itemCount || 0,
+      }));
+
+      return {
+        discountCategories,
+        budgetTiers,
+        categories,
+      };
+    }
   );
 }
 

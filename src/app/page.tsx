@@ -14,9 +14,11 @@ import {
   getAllComparisons,
   getMajorDiscounts,
   getActiveHeroBanners,
+  getHomepageDiscoveryData,
 } from '@/lib/data-service';
 import { HeroBackgroundCarousel } from '@/components/home/HeroBackgroundCarousel';
 import { HomeDiscountDiscovery } from '@/components/home/HomeDiscountDiscovery';
+import { HomeDealsBudgetCategories } from '@/components/home/HomeDealsBudgetCategories';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { ProductCard } from '@/components/products/ProductCard';
 import { DealCard } from '@/components/deals/DealCard';
@@ -61,6 +63,7 @@ export default async function HomePage() {
     reviews,
     majorDiscounts,
     allProducts,
+    discoveryData,
   ] = await Promise.all([
     getActiveHeroBanners(5),
     getAllCategories(),
@@ -76,6 +79,7 @@ export default async function HomePage() {
     getAllReviews(),
     getMajorDiscounts(50),
     getAllProducts(),
+    getHomepageDiscoveryData(),
   ]);
 
   const hasAnyCatalogContent =
@@ -89,7 +93,10 @@ export default async function HomePage() {
     majorDiscounts.length > 0 ||
     guides.length > 0 ||
     reviews.length > 0 ||
-    comparisons.length > 0;
+    comparisons.length > 0 ||
+    discoveryData.discountCategories.length > 0 ||
+    discoveryData.budgetTiers.length > 0 ||
+    discoveryData.categories.length > 0;
 
   return (
     <div className="space-y-12 sm:space-y-16 pb-16">
@@ -161,6 +168,9 @@ export default async function HomePage() {
       </section>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-14 sm:space-y-16">
+        {/* NEW SECTION: Shop by Deals, Budget & Categories */}
+        <HomeDealsBudgetCategories data={discoveryData} />
+
         {/* Live Deals Catalog Updating State (when DB collections are empty) */}
         {!hasAnyCatalogContent && (
           <div className="bg-slate-50 border border-slate-200 rounded-3xl p-8 sm:p-12 text-center max-w-2xl mx-auto my-8 shadow-xs">

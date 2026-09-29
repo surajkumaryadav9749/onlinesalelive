@@ -47,8 +47,11 @@ export interface Product {
   marketplaces: MarketplaceOffer[];
   dealType: DealType;
   featured?: boolean;
+  isFeatured?: boolean;
+  isActive?: boolean;
   trending?: boolean;
   badgeText?: string;
+  tags?: string[];
   source?: 'manual' | 'csv_import';
   createdAt?: string;
 }
@@ -60,8 +63,40 @@ export interface Category {
   icon: string;
   description: string;
   itemCount: number;
-  image: string;
+  image?: string;
   featured?: boolean;
+  isActive?: boolean;
+  displayOrder?: number;
+}
+
+export interface DiscountCategoryItem {
+  slug: string;
+  name: string;
+  count: number;
+  image?: string;
+  icon?: string;
+}
+
+export interface BudgetTierItem {
+  label: string;
+  amount: number;
+  count: number;
+  href: string;
+}
+
+export interface DiscoveryCategoryItem {
+  id: string;
+  slug: string;
+  name: string;
+  image?: string;
+  icon?: string;
+  itemCount: number;
+}
+
+export interface HomepageDiscoveryData {
+  discountCategories: DiscountCategoryItem[];
+  budgetTiers: BudgetTierItem[];
+  categories: DiscoveryCategoryItem[];
 }
 
 export interface HeroBanner {
@@ -182,6 +217,7 @@ export interface FilterOptions {
   category?: string;
   minPrice?: number;
   maxPrice?: number;
+  maxPriceExclusive?: boolean;
   minDiscount?: number;
   discountRange?: number;
   discountMin?: number;

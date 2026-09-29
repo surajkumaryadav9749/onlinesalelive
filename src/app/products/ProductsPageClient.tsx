@@ -21,23 +21,52 @@ export const ProductsPageClient: React.FC<ProductsPageClientProps> = ({
 }) => {
   const searchParams = useSearchParams();
 
-  // Read discount from URL parameter if present
+  // Read query parameters from URL
+  const urlCategory = searchParams.get('category') || undefined;
   const urlDiscount = searchParams.get('discount');
+  const urlMinDiscount = searchParams.get('minDiscount')
+    ? Number(searchParams.get('minDiscount'))
+    : urlDiscount === '50plus'
+    ? 50
+    : undefined;
+  const urlMaxPrice = searchParams.get('maxPrice')
+    ? Number(searchParams.get('maxPrice'))
+    : undefined;
+  const urlMinPrice = searchParams.get('minPrice')
+    ? Number(searchParams.get('minPrice'))
+    : undefined;
+
+  const urlPriceOp = searchParams.get('priceOp');
+  const isBudgetUnderTier =
+    urlPriceOp === 'lt' ||
+    (urlMaxPrice !== undefined && [299, 399, 499, 599, 699, 799, 899].includes(urlMaxPrice));
+
   const initialDiscount = useMemo(() => {
-    if (!urlDiscount) return undefined;
+    if (!urlDiscount || urlDiscount === '50plus') return undefined;
     const num = parseInt(urlDiscount, 10);
     return isNaN(num) ? undefined : num;
   }, [urlDiscount]);
 
-  const [filters, setFilters] = useState<FilterOptions>(() => ({
-    discountRange: initialDiscount,
-  }));
-  const [prevInitialDiscount, setPrevInitialDiscount] = useState(initialDiscount);
+  const initialFilters = useMemo<FilterOptions>(
+    () => ({
+      category: urlCategory,
+      minDiscount: urlMinDiscount,
+      maxPrice: urlMaxPrice,
+      maxPriceExclusive: isBudgetUnderTier ? true : undefined,
+      minPrice: urlMinPrice,
+      discountRange: initialDiscount,
+    }),
+    [urlCategory, urlMinDiscount, urlMaxPrice, isBudgetUnderTier, urlMinPrice, initialDiscount]
+  );
+
+  const [filters, setFilters] = useState<FilterOptions>(initialFilters);
+  const [prevParamsKey, setPrevParamsKey] = useState(() => searchParams.toString());
 
   // Sync if URL search params change externally (e.g. back/forward navigation)
-  if (prevInitialDiscount !== initialDiscount) {
-    setPrevInitialDiscount(initialDiscount);
-    setFilters((prev) => ({ ...prev, discountRange: initialDiscount }));
+  const currentParamsKey = searchParams.toString();
+  if (prevParamsKey !== currentParamsKey) {
+    setPrevParamsKey(currentParamsKey);
+    setFilters(initialFilters);
   }
 
   const [sortBy, setSortBy] = useState<SortOption>('popular');
@@ -46,12 +75,16 @@ export const ProductsPageClient: React.FC<ProductsPageClientProps> = ({
   const handleFiltersChange = (newFilters: FilterOptions) => {
     setFilters(newFilters);
     if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      if (newFilters.discountRange !== undefined) {
-        params.set('discount', String(newFilters.discountRange));
-      } else {
-        params.delete('discount');
-      }
+      const params = new URLSearchParams();
+      if (newFilters.category) params.set('category', newFilters.category);
+      if (newFilters.minDiscount) params.set('minDiscount', String(newFilters.minDiscount));
+      if (newFilters.discountRange !== undefined) params.set('discount', String(newFilters.discountRange));
+      if (newFilters.maxPrice !== undefined) params.set('maxPrice', String(newFilters.maxPrice));
+      if (newFilters.minPrice !== undefined) params.set('minPrice', String(newFilters.minPrice));
+      if (newFilters.dealType) params.set('dealType', newFilters.dealType);
+      if (newFilters.marketplace) params.set('marketplace', newFilters.marketplace);
+      if (newFilters.rating) params.set('rating', String(newFilters.rating));
+
       const newQuery = params.toString();
       const newPath = newQuery ? `${window.location.pathname}?${newQuery}` : window.location.pathname;
       window.history.replaceState(null, '', newPath);

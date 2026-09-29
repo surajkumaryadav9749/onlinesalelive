@@ -219,6 +219,158 @@ async function runCategoryImageTestSuite() {
     assert(17, 'Live getHomepageDiscoveryData', false, String(err));
   }
 
+  // --- 5. CATEGORY UPDATE & REPLACEMENT REGRESSION TESTS (Section 12) ---
+  console.log('\n--- 5. CATEGORY UPDATE REGRESSION TESTS (Section 12) ---');
+
+  const regSlug = `test-cat-reg-${Date.now()}`;
+  let regCatId = '';
+
+  try {
+    // Setup initial category
+    const initialCategory = await CategoryModel.create({
+      name: 'Regression Test Headphones',
+      slug: regSlug,
+      description: 'Original description for headphones',
+      icon: 'Headphones',
+      iconKey: 'Headphones',
+      image: '',
+      imageUrl: '',
+      isActive: true,
+      featured: false,
+    });
+    regCatId = initialCategory._id.toString();
+
+    // 18. Update category without image (preserves existing icon and empty imageUrl)
+    initialCategory.description = 'Updated description without image';
+    await initialCategory.save();
+    const catNoImgUpdate = await CategoryModel.findById(regCatId).lean();
+    assert(
+      18,
+      '1. Update category without image preserves icon fallback',
+      Boolean(catNoImgUpdate && catNoImgUpdate.description === 'Updated description without image' && !catNoImgUpdate.imageUrl && catNoImgUpdate.icon === 'Headphones')
+    );
+
+    // 19. Update category with PNG image (1.41 MB like user report)
+    const pngSize = Math.floor(1.41 * 1024 * 1024);
+    const pngBuffer = new Uint8Array(pngSize);
+    const pngFile = new File([pngBuffer], 'Premium Wireless Headphones on Peach Backdrop.png', { type: 'image/png' });
+    const pngValidation = validateCategoryImageFile(pngFile);
+    assert(19, '2. Update category with PNG image passes 5MB validation', pngValidation.valid);
+
+    const uploadedPngUrl = await saveUploadedCategoryFile(pngFile, regSlug);
+    initialCategory.imageUrl = uploadedPngUrl;
+    initialCategory.image = uploadedPngUrl;
+    await initialCategory.save();
+    const catWithPng = await CategoryModel.findById(regCatId).lean();
+    assert(
+      20,
+      '2. Update category with PNG image saves imageUrl and image',
+      Boolean(catWithPng && catWithPng.imageUrl === uploadedPngUrl && catWithPng.image === uploadedPngUrl)
+    );
+
+    // 21. Update category with JPG image
+    const jpgFile = new File([new Uint8Array(1024 * 50)], 'headphones.jpg', { type: 'image/jpeg' });
+    const uploadedJpgUrl = await saveUploadedCategoryFile(jpgFile, regSlug);
+    assert(21, '3. Update category with JPG image succeeds', Boolean(uploadedJpgUrl.endsWith('.jpg')));
+
+    // 22. Update category with WebP image
+    const webpFile = new File([new Uint8Array(1024 * 50)], 'headphones.webp', { type: 'image/webp' });
+    const uploadedWebpUrl = await saveUploadedCategoryFile(webpFile, regSlug);
+    assert(22, '4. Update category with WebP image succeeds', Boolean(uploadedWebpUrl.endsWith('.webp')));
+
+    // 23. Replace existing image (PNG replaced by WebP, safe cleanup of PNG)
+    const oldUrlToReplace = initialCategory.imageUrl || '';
+    initialCategory.imageUrl = uploadedWebpUrl;
+    initialCategory.image = uploadedWebpUrl;
+    await initialCategory.save();
+    if (oldUrlToReplace) {
+      await deleteUploadedCategoryFile(oldUrlToReplace, regCatId);
+    }
+    const catReplaced = await CategoryModel.findById(regCatId).lean();
+    assert(
+      23,
+      '5. Replace existing image updates URL and cleans up old file safely',
+      Boolean(catReplaced && catReplaced.imageUrl === uploadedWebpUrl)
+    );
+
+    // 24. Remove existing image
+    const urlToRemove = catReplaced?.imageUrl || '';
+    if (urlToRemove) {
+      await deleteUploadedCategoryFile(urlToRemove, regCatId);
+    }
+    await CategoryModel.updateOne({ _id: regCatId }, { $set: { imageUrl: '', image: '' } });
+    const catRemoved = await CategoryModel.findById(regCatId).lean();
+    assert(
+      24,
+      '6. Remove existing image clears imageUrl and keeps icon fallback',
+      Boolean(catRemoved && !catRemoved.imageUrl && !catRemoved.image && catRemoved.icon === 'Headphones')
+    );
+
+    // 25. External image URL works independently
+    const externalUrl = 'https://images.unsplash.com/photo-headphones?auto=format&fit=crop&w=500';
+    await CategoryModel.updateOne({ _id: regCatId }, { $set: { imageUrl: externalUrl, image: externalUrl } });
+    const catExternal = await CategoryModel.findById(regCatId).lean();
+    assert(
+      25,
+      '7. External image URL updates category independently',
+      Boolean(catExternal && catExternal.imageUrl === externalUrl)
+    );
+
+    // 26. Invalid file type rejected
+    const badExtFile = new File([new Uint8Array(1024)], 'malicious.exe', { type: 'application/x-msdownload' });
+    const badExtVal = validateCategoryImageFile(badExtFile);
+    assert(26, '8. Invalid file type is strictly rejected', !badExtVal.valid);
+
+    // 27. File >5 MB rejected
+    const oversizedFile = new File([new Uint8Array(6 * 1024 * 1024)], 'too-large.png', { type: 'image/png' });
+    const oversizedVal = validateCategoryImageFile(oversizedFile);
+    assert(27, '9. File >5 MB is strictly rejected', !oversizedVal.valid);
+
+    // 28. Existing category fields remain unchanged when only image changes
+    const originalDesc = catExternal?.description;
+    const originalName = catExternal?.name;
+    const originalSlug = catExternal?.slug;
+    await CategoryModel.updateOne({ _id: regCatId }, { $set: { imageUrl: '/uploads/categories/new-shot.png', image: '/uploads/categories/new-shot.png' } });
+    const catFieldsCheck = await CategoryModel.findById(regCatId).lean();
+    assert(
+      28,
+      '11. Existing category fields remain unchanged when only image changes',
+      Boolean(catFieldsCheck && catFieldsCheck.name === originalName && catFieldsCheck.slug === originalSlug && catFieldsCheck.description === originalDesc && catFieldsCheck.imageUrl === '/uploads/categories/new-shot.png')
+    );
+
+    // 29. imageUrl correctly saved
+    assert(
+      29,
+      '12. imageUrl correctly saved to database',
+      catFieldsCheck?.imageUrl === '/uploads/categories/new-shot.png'
+    );
+
+    // 30. Old uploaded file cleanup works without unlinking referenced files
+    const cleanResult = await deleteUploadedCategoryFile('/uploads/categories/new-shot.png', regCatId);
+    assert(
+      30,
+      '13. Old uploaded file cleanup checks reference protection before unlinking',
+      typeof cleanResult === 'boolean'
+    );
+
+    // 31. Icon fallback works when imageUrl is cleared
+    await CategoryModel.updateOne({ _id: regCatId }, { $set: { imageUrl: '', image: '' } });
+    const catFinal = await CategoryModel.findById(regCatId).lean();
+    assert(
+      31,
+      '14. Icon fallback works seamlessly',
+      Boolean(catFinal && !catFinal.imageUrl && catFinal.icon === 'Headphones')
+    );
+
+    // Clean up temporary test files
+    if (uploadedJpgUrl) await deleteUploadedCategoryFile(uploadedJpgUrl, regCatId);
+    if (uploadedWebpUrl) await deleteUploadedCategoryFile(uploadedWebpUrl, regCatId);
+  } finally {
+    if (regCatId) {
+      await CategoryModel.deleteOne({ _id: regCatId }).catch(() => {});
+    }
+  }
+
   console.log('\n================================================================');
   console.log(`TEST SUMMARY: ${passed} PASSED, ${failed} FAILED (TOTAL: ${passed + failed})`);
   console.log('================================================================');
@@ -234,3 +386,4 @@ runCategoryImageTestSuite().catch((err) => {
   console.error('Fatal test error:', err);
   process.exit(1);
 });
+

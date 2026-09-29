@@ -187,6 +187,8 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({ initialData, isEdit 
         data.append('iconKey', formData.icon || 'Tv');
         data.append('featured', String(formData.featured));
         data.append('isActive', String(formData.isActive));
+        // Append both 'image' and 'file' for maximum compatibility
+        data.append('image', selectedFile);
         data.append('file', selectedFile);
 
         res = await fetch(url, {
@@ -210,17 +212,26 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({ initialData, isEdit 
         });
       }
 
-      const result = await res.json();
-      if (!res.ok || !result.success) {
-        setError(result.error || 'Failed to save category');
+      let result: { success?: boolean; error?: string; message?: string } | null = null;
+      try {
+        result = await res.json();
+      } catch {
+        const text = await res.text().catch(() => '');
+        throw new Error(text || `Server returned status ${res.status}`);
+      }
+
+      if (!res.ok || !result?.success) {
+        const errMsg = result?.error || result?.message || `Failed to update category (HTTP ${res.status})`;
+        setError(errMsg.startsWith('Error:') ? errMsg : `Error: ${errMsg}`);
         setSaving(false);
         return;
       }
 
       router.push('/admin/categories');
       router.refresh();
-    } catch {
-      setError('Network error saving category');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Network error saving category';
+      setError(msg.startsWith('Error:') ? msg : `Error: ${msg}`);
       setSaving(false);
     }
   };

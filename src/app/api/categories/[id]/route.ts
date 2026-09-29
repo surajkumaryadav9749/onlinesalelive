@@ -45,7 +45,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
     const existing = await Category.findOne(query);
     if (!existing) return errorResponse('Category not found', 404);
 
-    const contentType = req.headers.get('content-type') || '';
+    const contentType = (req.headers.get('content-type') || '').toLowerCase();
     let name: string | undefined;
     let slug: string | undefined;
     let description: string | undefined;
@@ -60,29 +60,54 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
     if (contentType.includes('multipart/form-data')) {
       const formData = await req.formData();
-      if (formData.has('name')) name = (formData.get('name') as string).trim();
-      if (formData.has('slug')) slug = (formData.get('slug') as string).trim();
-      if (formData.has('description')) description = (formData.get('description') as string).trim();
-      if (formData.has('icon')) icon = (formData.get('icon') as string).trim();
-      if (formData.has('iconKey')) iconKey = (formData.get('iconKey') as string).trim();
-      if (formData.has('image')) image = (formData.get('image') as string).trim();
-      if (formData.has('imageUrl')) imageUrl = (formData.get('imageUrl') as string).trim();
 
-      if (formData.has('featured')) {
-        const val = formData.get('featured');
-        featured = val === 'true' || val === '1';
-      }
-      if (formData.has('isActive')) {
-        const val = formData.get('isActive');
-        isActive = val === 'true' || val === '1';
-      }
-      if (formData.has('removeImage')) {
-        removeImage = formData.get('removeImage') === 'true';
+      // Check for file in 'image', 'file', or 'categoryImage'
+      const fileEntry = formData.get('image') ?? formData.get('file') ?? formData.get('categoryImage');
+      if (fileEntry instanceof Blob && fileEntry.size > 0) {
+        uploadedFile = fileEntry as File;
       }
 
-      const file = formData.get('file');
-      if (file && typeof file !== 'string') {
-        uploadedFile = file as File;
+      // Safely extract string fields
+      const rawName = formData.get('name');
+      if (typeof rawName === 'string') name = rawName.trim();
+
+      const rawSlug = formData.get('slug');
+      if (typeof rawSlug === 'string') slug = rawSlug.trim();
+
+      const rawDesc = formData.get('description');
+      if (typeof rawDesc === 'string') description = rawDesc.trim();
+
+      const rawIcon = formData.get('icon');
+      if (typeof rawIcon === 'string') icon = rawIcon.trim();
+
+      const rawIconKey = formData.get('iconKey');
+      if (typeof rawIconKey === 'string') iconKey = rawIconKey.trim();
+
+      const rawFeatured = formData.get('featured');
+      if (rawFeatured !== null && rawFeatured !== undefined) {
+        featured = rawFeatured === 'true' || rawFeatured === '1';
+      }
+
+      const rawIsActive = formData.get('isActive');
+      if (rawIsActive !== null && rawIsActive !== undefined) {
+        isActive = rawIsActive === 'true' || rawIsActive === '1';
+      }
+
+      const rawRemove = formData.get('removeImage');
+      if (rawRemove !== null && rawRemove !== undefined) {
+        removeImage = rawRemove === 'true' || rawRemove === '1';
+      }
+
+      // If text string URL was passed for image/imageUrl
+      const rawImageUrl = formData.get('imageUrl');
+      if (typeof rawImageUrl === 'string' && rawImageUrl.trim()) {
+        imageUrl = rawImageUrl.trim();
+      }
+
+      const rawImage = formData.get('image');
+      if (typeof rawImage === 'string' && rawImage.trim()) {
+        image = rawImage.trim();
+        if (!imageUrl) imageUrl = image;
       }
     } else {
       const body = await req.json();
@@ -159,11 +184,14 @@ export async function PUT(req: NextRequest, { params }: Params) {
     await existing.save();
     revalidateCatalog(undefined, existing.slug);
     return successResponse(existing);
-  } catch (err) {
-    console.error('Error updating category:', err instanceof Error ? err.message : err);
-    return errorResponse('Failed to update category', 500);
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : 'Failed to update category';
+    console.error('Error updating category:', err);
+    return errorResponse(errorMsg || 'Failed to update category', 500);
   }
 }
+
+export const PATCH = PUT;
 
 export async function DELETE(req: NextRequest, { params }: Params) {
   const { errorResponse: authError } = await checkAdminAuth();

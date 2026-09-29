@@ -59,32 +59,56 @@ export async function POST(req: NextRequest) {
 
     if (contentType.includes('multipart/form-data')) {
       const formData = await req.formData();
-      name = (formData.get('name') as string || '').trim();
-      slug = (formData.get('slug') as string || '').trim();
-      description = (formData.get('description') as string || '').trim();
-      icon = (formData.get('icon') as string || '').trim() || 'Tv';
-      iconKey = (formData.get('iconKey') as string || '').trim() || icon;
-      image = (formData.get('image') as string || '').trim();
-      imageUrl = (formData.get('imageUrl') as string || '').trim() || image;
 
-      const featuredVal = formData.get('featured');
-      if (featuredVal !== null) {
-        featured = featuredVal === 'true' || featuredVal === '1';
+      // Check for uploaded file in 'image', 'file', or 'categoryImage'
+      const fileEntry = formData.get('image') ?? formData.get('file') ?? formData.get('categoryImage');
+      let uploadedFile: File | null = null;
+      if (fileEntry instanceof Blob && fileEntry.size > 0) {
+        uploadedFile = fileEntry as File;
       }
 
-      const activeVal = formData.get('isActive');
-      if (activeVal !== null) {
-        isActive = activeVal === 'true' || activeVal === '1';
+      const rawName = formData.get('name');
+      if (typeof rawName === 'string') name = rawName.trim();
+
+      const rawSlug = formData.get('slug');
+      if (typeof rawSlug === 'string') slug = rawSlug.trim();
+
+      const rawDesc = formData.get('description');
+      if (typeof rawDesc === 'string') description = rawDesc.trim();
+
+      const rawIcon = formData.get('icon');
+      if (typeof rawIcon === 'string') icon = rawIcon.trim() || 'Tv';
+
+      const rawIconKey = formData.get('iconKey');
+      if (typeof rawIconKey === 'string') iconKey = rawIconKey.trim() || icon;
+
+      const rawFeatured = formData.get('featured');
+      if (rawFeatured !== null && rawFeatured !== undefined) {
+        featured = rawFeatured === 'true' || rawFeatured === '1';
       }
 
-      const file = formData.get('file');
-      if (file && typeof file !== 'string') {
-        const fileObj = file as File;
-        const validation = validateCategoryImageFile(fileObj);
+      const rawIsActive = formData.get('isActive');
+      if (rawIsActive !== null && rawIsActive !== undefined) {
+        isActive = rawIsActive === 'true' || rawIsActive === '1';
+      }
+
+      const rawImageUrl = formData.get('imageUrl');
+      if (typeof rawImageUrl === 'string' && rawImageUrl.trim()) {
+        imageUrl = rawImageUrl.trim();
+      }
+
+      const rawImage = formData.get('image');
+      if (typeof rawImage === 'string' && rawImage.trim()) {
+        image = rawImage.trim();
+        if (!imageUrl) imageUrl = image;
+      }
+
+      if (uploadedFile) {
+        const validation = validateCategoryImageFile(uploadedFile);
         if (!validation.valid) {
           return errorResponse(validation.error || 'Invalid category image file', 400);
         }
-        imageUrl = await saveUploadedCategoryFile(fileObj, slug);
+        imageUrl = await saveUploadedCategoryFile(uploadedFile, slug);
         image = imageUrl;
       }
     } else {
@@ -128,8 +152,9 @@ export async function POST(req: NextRequest) {
 
     revalidateCatalog(undefined, normalizedSlug);
     return successResponse(category, 201);
-  } catch (err) {
-    console.error('Error creating category:', err instanceof Error ? err.message : err);
-    return errorResponse('Failed to create category', 500);
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : 'Failed to create category';
+    console.error('Error creating category:', err);
+    return errorResponse(errorMsg || 'Failed to create category', 500);
   }
 }

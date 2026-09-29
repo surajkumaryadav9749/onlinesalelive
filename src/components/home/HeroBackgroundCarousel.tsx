@@ -130,17 +130,19 @@ export const HeroBackgroundCarousel: React.FC<HeroBackgroundCarouselProps> = ({ 
               priority={index === 0}
               loading={index === 0 ? 'eager' : 'lazy'}
               sizes="100vw"
-              quality={85}
-              className="object-cover object-center transform scale-102 transition-transform duration-7000 ease-out"
+              unoptimized
+              className="object-cover object-center sm:object-right select-none pointer-events-none"
               onError={() => handleImageError(bannerKey)}
             />
           </div>
         );
       })}
 
-      {/* Subtle Readability Overlay: Preserves banner visuals while guaranteeing text contrast */}
+      {/* Subtle Readability Gradient:
+          Applied ONLY behind the LEFT text area on desktop so that the
+          RIGHT product visuals remain 100% sharp, clear, and completely uncovered. */}
       <div
-        className="absolute inset-0 z-1 pointer-events-none bg-linear-to-b from-white/75 via-white/55 to-slate-50/80 backdrop-blur-[0.5px]"
+        className="absolute inset-0 z-1 pointer-events-none bg-linear-to-r from-white/85 via-white/40 to-transparent lg:w-[55%] xl:w-[50%]"
         aria-hidden="true"
       />
 
@@ -156,7 +158,7 @@ export const HeroBackgroundCarousel: React.FC<HeroBackgroundCarouselProps> = ({ 
 
       {/* Slide Indicators: Subtle dots when multiple banners exist */}
       {bannerCount > 1 && (
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900/15 backdrop-blur-xs">
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900/20">
           {validBanners.map((b, idx) => {
             const isSelected = idx === currentIndex;
             return (
@@ -170,21 +172,13 @@ export const HeroBackgroundCarousel: React.FC<HeroBackgroundCarouselProps> = ({ 
                 className={`transition-all duration-300 cursor-pointer ${
                   isSelected
                     ? 'w-6 h-1.5 rounded-full bg-orange-600 shadow-xs'
-                    : 'w-1.5 h-1.5 rounded-full bg-slate-400/80 hover:bg-slate-600'
+                    : 'w-1.5 h-1.5 rounded-full bg-white/70 hover:bg-white'
                 }`}
                 aria-label={`Go to banner ${idx + 1} of ${bannerCount}: ${b.title}`}
                 aria-current={isSelected ? 'true' : undefined}
               />
             );
           })}
-        </div>
-      )}
-
-      {/* Subtle Title Badge on desktop */}
-      {activeBanner?.title && (
-        <div className="absolute bottom-3 right-4 z-20 hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900/25 backdrop-blur-xs text-[11px] font-semibold text-slate-700 border border-white/40">
-          <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
-          <span className="truncate max-w-[200px]">{activeBanner.title}</span>
         </div>
       )}
     </div>

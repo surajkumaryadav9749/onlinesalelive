@@ -32,6 +32,7 @@ import {
   TrendingDown,
   ShieldCheck,
   ShoppingBag,
+  Tag,
 } from 'lucide-react';
 import type { Metadata } from 'next';
 import { buildCanonicalUrl } from '@/lib/seo';
@@ -101,41 +102,41 @@ export default async function HomePage() {
   return (
     <div className="space-y-12 sm:space-y-16 pb-16">
       {/* 1. HERO SECTION */}
-      <section className="relative overflow-hidden bg-linear-to-b from-orange-50/70 via-white to-slate-50 border-b border-slate-200/80 pt-10 pb-16 sm:py-20">
+      <section className="relative overflow-hidden border-b border-slate-200/80 min-h-[500px] sm:min-h-[540px] lg:min-h-[580px] xl:min-h-[600px] flex items-center py-10 sm:py-14 lg:py-16 bg-orange-50/40">
         {/* Dynamic Background Banner Carousel */}
         <HeroBackgroundCarousel banners={heroBanners} />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center max-w-3xl mx-auto">
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="text-left w-full lg:w-[48%] xl:w-[45%] max-w-xl lg:max-w-none mr-auto">
             {/* Pill Tag */}
-            <div className="inline-flex items-center gap-2 bg-orange-100 border border-orange-200 text-orange-800 text-xs sm:text-sm font-semibold px-4 py-1.5 rounded-full mb-6 shadow-2xs">
-              <span className="w-2 h-2 rounded-full bg-orange-600 animate-ping" />
+            <div className="inline-flex items-center gap-2 bg-orange-100/70 border border-orange-200/90 text-slate-800 text-xs sm:text-sm font-semibold px-3.5 py-1.5 rounded-full mb-5 shadow-2xs">
+              <Tag size={15} className="text-orange-600 shrink-0" />
               <span>Compare Live Offers Across Top Indian Marketplaces</span>
             </div>
 
             {/* Main Headline */}
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-tight sm:leading-none">
+            <h1 className="text-3xl sm:text-5xl lg:text-[52px] xl:text-[58px] font-black text-slate-950 tracking-tight leading-[1.08] sm:leading-[1.1]">
               Find the Best <span className="text-orange-600">Deals</span>,{' '}
               <span className="text-red-600">Sales</span> & Discounts
             </h1>
 
             {/* Supporting Text */}
-            <p className="mt-5 text-base sm:text-lg text-slate-600 leading-relaxed font-normal">
+            <p className="mt-4 sm:mt-5 text-sm sm:text-base text-slate-700 leading-relaxed font-normal max-w-lg">
               OnlineSaleLive helps you discover verified price drops, major discounts, expert buying guides, and multi-store price comparisons across <strong>Amazon, Flipkart, Myntra, AJIO</strong> and <strong>Meesho</strong>.
             </p>
 
             {/* CTAs */}
-            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+            <div className="mt-7 sm:mt-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-start gap-3 sm:gap-4">
               <Link
                 href="/deals"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white font-bold text-sm sm:text-base px-7 py-3.5 rounded-xl shadow-lg shadow-orange-600/25 transition-all transform hover:-translate-y-0.5"
+                className="inline-flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white font-bold text-sm sm:text-base px-6 sm:px-7 py-3.5 rounded-xl shadow-lg shadow-orange-600/25 transition-all transform hover:-translate-y-0.5"
               >
                 <Zap size={18} />
                 <span>Explore Deals</span>
               </Link>
               <Link
                 href="/categories"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 font-bold text-sm sm:text-base px-7 py-3.5 rounded-xl shadow-xs transition-all hover:border-slate-400"
+                className="inline-flex items-center justify-center gap-2 bg-white/95 hover:bg-white text-slate-800 border border-slate-300 font-bold text-sm sm:text-base px-6 sm:px-7 py-3.5 rounded-xl shadow-xs transition-all hover:border-slate-400"
               >
                 <span>Browse Categories</span>
                 <ArrowRight size={18} />
@@ -143,28 +144,30 @@ export default async function HomePage() {
             </div>
 
             {/* Trust Badges */}
-            <div className="mt-10 pt-8 border-t border-slate-200/80 flex flex-wrap items-center justify-center gap-6 sm:gap-10 text-xs font-semibold text-slate-500">
+            <div className="mt-8 pt-6 border-t border-slate-300/40 flex flex-wrap items-center justify-start gap-4 sm:gap-6 text-xs font-semibold text-slate-600">
               <div className="flex items-center gap-2">
-                <ShieldCheck size={18} className="text-emerald-600" />
+                <ShieldCheck size={16} className="text-emerald-600 shrink-0" />
                 <span>100% Free & No Account Needed</span>
               </div>
               <div className="flex items-center gap-2">
-                <TrendingDown size={18} className="text-orange-600" />
+                <TrendingDown size={16} className="text-orange-600 shrink-0" />
                 <span>Price Drop Alerts & Comparison</span>
               </div>
               <div className="flex items-center gap-2">
-                <ShoppingBag size={18} className="text-blue-600" />
+                <ShoppingBag size={16} className="text-blue-600 shrink-0" />
                 <span>5+ Indian Marketplaces Tracked</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Decorative background blob */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-full pointer-events-none opacity-40">
-          <div className="absolute top-10 left-10 w-72 h-72 bg-orange-300/30 rounded-full blur-3xl" />
-          <div className="absolute top-20 right-10 w-80 h-80 bg-red-300/20 rounded-full blur-3xl" />
-        </div>
+        {/* Decorative background blob (only shown when no custom hero banners exist) */}
+        {heroBanners.length === 0 && (
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-full pointer-events-none opacity-40">
+            <div className="absolute top-10 left-10 w-72 h-72 bg-orange-300/30 rounded-full blur-3xl" />
+            <div className="absolute top-20 right-10 w-80 h-80 bg-red-300/20 rounded-full blur-3xl" />
+          </div>
+        )}
       </section>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-14 sm:space-y-16">

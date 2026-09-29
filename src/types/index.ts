@@ -64,6 +64,18 @@ export interface Category {
   featured?: boolean;
 }
 
+export interface HeroBanner {
+  id?: string;
+  _id?: string;
+  title: string;
+  imageUrl: string;
+  linkUrl?: string;
+  isActive: boolean;
+  displayOrder?: number;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
+}
+
 export interface Deal {
   id: string;
   title: string;

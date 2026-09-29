@@ -15,6 +15,7 @@ import {
   LogOut,
   ExternalLink,
   Zap,
+  Image as ImageIcon,
 } from 'lucide-react';
 
 interface AdminSidebarProps {
@@ -41,6 +42,7 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
   const navItems = [
     { name: 'Dashboard', href: '/admin', icon: LayoutDashboard, exact: true },
+    { name: 'Hero Banners', href: '/admin/hero-banners', icon: ImageIcon },
     { name: 'Products', href: '/admin/products', icon: Package },
     { name: 'Categories', href: '/admin/categories', icon: Layers },
     { name: 'Deals', href: '/admin/deals', icon: Flame },

@@ -13,6 +13,7 @@ import {
   Review,
   BlogPost,
   ComparisonItem,
+  HeroBanner,
 } from '@/types';
 import { connectToDatabase } from '@/lib/db';
 import { calculateDiscount, getDealStatus, isDealCurrentlyActive } from '@/lib/deal-utils';
@@ -24,6 +25,7 @@ import { Review as ReviewModel } from '@/models/Review';
 import { Article as ArticleModel } from '@/models/Article';
 import { Comparison as ComparisonModel } from '@/models/Comparison';
 import { AffiliateClick as AffiliateClickModel } from '@/models/AffiliateClick';
+import { HeroBanner as HeroBannerModel } from '@/models/HeroBanner';
 import { matchesDiscountRange } from '@/lib/filter-utils';
 
 // Helper to execute MongoDB query with mock fallback
@@ -1732,6 +1734,43 @@ export async function searchEntities(q: string): Promise<SearchEntitiesResult> {
           .slice(0, 4),
       };
     }
+  );
+}
+
+/**
+ * Retrieve active hero banners for homepage background carousel (max 5).
+ * Sorted by displayOrder ascending, then createdAt descending.
+ */
+export async function getActiveHeroBanners(limit: number = 5): Promise<HeroBanner[]> {
+  return withDbFallback(
+    async () => {
+      const banners = await HeroBannerModel.find({ isActive: true })
+        .sort({ displayOrder: 1, createdAt: -1 })
+        .limit(limit)
+        .lean();
+
+      return banners.map((b: {
+        _id: { toString(): string };
+        title: string;
+        imageUrl: string;
+        linkUrl?: string;
+        isActive?: boolean;
+        displayOrder?: number;
+        createdAt?: Date | string;
+        updatedAt?: Date | string;
+      }) => ({
+        id: b._id.toString(),
+        _id: b._id.toString(),
+        title: b.title,
+        imageUrl: b.imageUrl,
+        linkUrl: b.linkUrl || '',
+        isActive: Boolean(b.isActive),
+        displayOrder: b.displayOrder ?? 0,
+        createdAt: b.createdAt ? new Date(b.createdAt).toISOString() : undefined,
+        updatedAt: b.updatedAt ? new Date(b.updatedAt).toISOString() : undefined,
+      }));
+    },
+    () => []
   );
 }
 

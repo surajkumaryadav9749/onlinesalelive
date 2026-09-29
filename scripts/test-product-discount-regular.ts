@@ -87,14 +87,14 @@ async function runTestSuite() {
     assert('"Regular" is present in VALID_DEAL_TYPES for CSV import', VALID_DEAL_TYPES.includes('Regular'));
     
     // Check Product Mongoose Schema
-    const productDealTypeEnum = (ProductModel.schema.path('dealType') as any).enumValues;
+    const productDealTypeEnum = (ProductModel.schema.path('dealType') as unknown as { enumValues: string[] }).enumValues;
     assert('Product model schema enum includes "Regular"', productDealTypeEnum.includes('Regular'));
     assert('Product model schema enum preserves existing types', 
       ['Sale', "Today's Deal", 'Flash Deal', 'Price Drop', 'Major Discount', 'Featured Deal'].every(t => productDealTypeEnum.includes(t))
     );
 
     // Check Deal Mongoose Schema
-    const dealDealTypeEnum = (DealModel.schema.path('dealType') as any).enumValues;
+    const dealDealTypeEnum = (DealModel.schema.path('dealType') as unknown as { enumValues: string[] }).enumValues;
     assert('Deal model schema enum includes "Regular"', dealDealTypeEnum.includes('Regular'));
   }
 

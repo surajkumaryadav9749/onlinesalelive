@@ -53,3 +53,14 @@ export function revalidateContent(type: 'guide' | 'review' | 'comparison' | 'art
     console.warn('[Revalidation] Error revalidating content paths:', err);
   }
 }
+
+/**
+ * Revalidate homepage when hero banners change.
+ */
+export function revalidateHeroBanners() {
+  try {
+    revalidatePath('/', 'page');
+  } catch (err) {
+    console.warn('[Revalidation] Error revalidating hero banners:', err);
+  }
+}

@@ -8,3 +8,4 @@ export * from './Comparison';
 export * from './Admin';
 export * from './AffiliateClick';
 export * from './AffiliateReport';
+export * from './HeroBanner';

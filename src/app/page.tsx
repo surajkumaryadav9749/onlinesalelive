@@ -13,7 +13,9 @@ import {
   getAllReviews,
   getAllComparisons,
   getMajorDiscounts,
+  getActiveHeroBanners,
 } from '@/lib/data-service';
+import { HeroBackgroundCarousel } from '@/components/home/HeroBackgroundCarousel';
 import { HomeDiscountDiscovery } from '@/components/home/HomeDiscountDiscovery';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { ProductCard } from '@/components/products/ProductCard';
@@ -45,6 +47,7 @@ export const revalidate = 60;
 
 export default async function HomePage() {
   const [
+    heroBanners,
     categories,
     todaysDeals,
     popularDealsResult,
@@ -59,6 +62,7 @@ export default async function HomePage() {
     majorDiscounts,
     allProducts,
   ] = await Promise.all([
+    getActiveHeroBanners(5),
     getAllCategories(),
     getTodaysDeals(4),
     getPopularDeals({ limit: 4 }),
@@ -91,6 +95,9 @@ export default async function HomePage() {
     <div className="space-y-12 sm:space-y-16 pb-16">
       {/* 1. HERO SECTION */}
       <section className="relative overflow-hidden bg-linear-to-b from-orange-50/70 via-white to-slate-50 border-b border-slate-200/80 pt-10 pb-16 sm:py-20">
+        {/* Dynamic Background Banner Carousel */}
+        <HeroBackgroundCarousel banners={heroBanners} />
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center max-w-3xl mx-auto">
             {/* Pill Tag */}

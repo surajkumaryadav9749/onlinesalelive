@@ -1,6 +1,7 @@
 export type MarketplaceName = 'Amazon' | 'Flipkart' | 'Myntra' | 'AJIO' | 'Meesho';
 
 export type DealType =
+  | 'Regular'
   | "Today's Deal"
   | 'Sale'
   | 'Major Discount'
@@ -170,6 +171,9 @@ export interface FilterOptions {
   minPrice?: number;
   maxPrice?: number;
   minDiscount?: number;
+  discountRange?: number;
+  discountMin?: number;
+  discountMax?: number;
   dealType?: string;
   marketplace?: string;
   rating?: number;

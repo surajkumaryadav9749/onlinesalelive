@@ -100,7 +100,7 @@ const DealSchema = new Schema<IDeal>(
     },
     dealType: {
       type: String,
-      enum: ["Today's Deal", 'Sale', 'Major Discount', 'Flash Deal', 'Price Drop', 'Featured Deal'],
+      enum: ['Regular', "Today's Deal", 'Sale', 'Major Discount', 'Flash Deal', 'Price Drop', 'Featured Deal'],
       default: "Today's Deal",
       index: true,
     },

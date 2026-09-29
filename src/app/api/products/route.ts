@@ -16,6 +16,10 @@ export async function GET(req: NextRequest) {
     const dealType = searchParams.get('dealType');
     const maxPrice = searchParams.get('maxPrice');
     const featured = searchParams.get('featured');
+    const discount = searchParams.get('discount');
+    const discountMin = searchParams.get('discountMin');
+    const discountMax = searchParams.get('discountMax');
+    const minDiscount = searchParams.get('minDiscount');
     const all = searchParams.get('all') === 'true';
     const limit = Number(searchParams.get('limit')) || 100;
 
@@ -39,6 +43,25 @@ export async function GET(req: NextRequest) {
 
     if (maxPrice) {
       filter.price = { $lte: Number(maxPrice) };
+    }
+
+    // Exact non-overlapping discount range filtering
+    if (discount) {
+      const dNum = Number(discount);
+      if (!isNaN(dNum)) {
+        if (dNum >= 90) {
+          filter.discountPercent = { $gte: 90 };
+        } else {
+          filter.discountPercent = { $gte: dNum, $lt: dNum + 10 };
+        }
+      }
+    } else if (discountMin || discountMax) {
+      const cond: Record<string, number> = {};
+      if (discountMin && !isNaN(Number(discountMin))) cond.$gte = Number(discountMin);
+      if (discountMax && !isNaN(Number(discountMax))) cond.$lt = Number(discountMax);
+      filter.discountPercent = cond;
+    } else if (minDiscount && !isNaN(Number(minDiscount))) {
+      filter.discountPercent = { $gte: Number(minDiscount) };
     }
 
     if (featured === 'true') {
@@ -90,8 +113,8 @@ export async function POST(req: NextRequest) {
       isActive,
     } = body;
 
-    if (!name || !slug || !price || !originalPrice || !category) {
-      return errorResponse('Required fields missing: name, slug, price, originalPrice, and category are mandatory');
+    if (!name || !slug || price === undefined || price === null || !category) {
+      return errorResponse('Required fields missing: name, slug, price, and category are mandatory');
     }
 
     // Validate Category
@@ -114,11 +137,14 @@ export async function POST(req: NextRequest) {
 
     // Auto-calculate discount if not provided
     const numPrice = Number(price);
-    const numOriginal = Number(originalPrice);
+    const numOriginal =
+      originalPrice !== undefined && originalPrice !== null && String(originalPrice).trim() !== ''
+        ? Number(originalPrice)
+        : numPrice;
     const calculatedDiscount =
-      discountPercent !== undefined
+      discountPercent !== undefined && discountPercent !== null && String(discountPercent).trim() !== ''
         ? Number(discountPercent)
-        : numOriginal > numPrice
+        : numOriginal > numPrice && numOriginal > 0
         ? Math.round(((numOriginal - numPrice) / numOriginal) * 100)
         : 0;
 

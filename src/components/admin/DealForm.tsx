@@ -37,6 +37,7 @@ interface DealFormProps {
 
 const MARKETPLACE_OPTIONS: MarketplaceName[] = ['Amazon', 'Flipkart', 'Myntra', 'AJIO', 'Meesho'];
 const DEAL_TYPE_OPTIONS: DealType[] = [
+  'Regular',
   "Today's Deal",
   'Sale',
   'Major Discount',

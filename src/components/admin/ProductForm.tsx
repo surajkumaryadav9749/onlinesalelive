@@ -60,6 +60,7 @@ interface CategoryOption {
 
 const MARKETPLACE_OPTIONS: MarketplaceName[] = ['Amazon', 'Flipkart', 'Myntra', 'AJIO', 'Meesho'];
 const DEAL_TYPE_OPTIONS: DealType[] = [
+  'Regular',
   "Today's Deal",
   'Sale',
   'Major Discount',
@@ -194,7 +195,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ initialData, isEdit })
   const handlePriceChange = (priceVal: string, originalPriceVal: string) => {
     const p = parseFloat(priceVal);
     const op = parseFloat(originalPriceVal);
-    let discount = formData.discountPercent;
+    let discount = 0;
     if (!isNaN(p) && !isNaN(op) && op > p && op > 0) {
       discount = Math.round(((op - p) / op) * 100);
     }

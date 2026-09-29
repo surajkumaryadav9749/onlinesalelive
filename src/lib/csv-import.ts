@@ -43,6 +43,7 @@ export const CSV_COLUMNS = [
 export type CsvColumnName = (typeof CSV_COLUMNS)[number];
 
 export const VALID_DEAL_TYPES: DealType[] = [
+  'Regular',
   "Today's Deal",
   'Sale',
   'Major Discount',

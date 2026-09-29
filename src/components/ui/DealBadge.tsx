@@ -35,6 +35,11 @@ export const DealBadge: React.FC<DealBadgeProps> = ({ type, size = 'sm' }) => {
           bg: 'bg-indigo-50 text-indigo-800 border-indigo-200',
           icon: Sparkles,
         };
+      case 'Regular':
+        return {
+          bg: 'bg-slate-100 text-slate-700 border-slate-200',
+          icon: Tag,
+        };
       case 'Sale':
       default:
         return {

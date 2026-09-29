@@ -172,9 +172,11 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
                   ₹{product.originalPrice.toLocaleString('en-IN')}
                 </span>
               )}
-              <span className="text-sm font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
-                Save ₹{(product.originalPrice - product.price).toLocaleString('en-IN')} ({product.discountPercent}%)
-              </span>
+              {product.originalPrice > product.price && product.discountPercent > 0 && (
+                <span className="text-sm font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
+                  Save ₹{(product.originalPrice - product.price).toLocaleString('en-IN')} ({product.discountPercent}%)
+                </span>
+              )}
             </div>
             <p className="text-xs text-slate-500">
               Inclusive of all taxes. Free delivery may apply depending on marketplace terms and prime membership.

@@ -1,7 +1,8 @@
 'use client';
 
 import React from 'react';
-import { FilterOptions } from '@/types';
+import { FilterOptions, DealType } from '@/types';
+import { PRODUCT_DISCOUNT_OPTIONS } from '@/lib/filter-utils';
 import { Filter, RotateCcw } from 'lucide-react';
 
 interface ProductFiltersProps {
@@ -29,11 +30,19 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
   showCategoryFilter = true,
 }) => {
   const marketplaces = ['Amazon', 'Flipkart', 'Myntra', 'AJIO', 'Meesho'];
-  const discounts = [10, 20, 30, 50, 70];
-  const dealTypes = ["Today's Deal", 'Sale', 'Major Discount', 'Flash Deal', 'Price Drop', 'Featured Deal'];
+  const dealTypes: DealType[] = [
+    'Regular',
+    "Today's Deal",
+    'Sale',
+    'Major Discount',
+    'Flash Deal',
+    'Price Drop',
+    'Featured Deal',
+  ];
 
   const hasActiveFilters =
     filters.category ||
+    filters.discountRange !== undefined ||
     filters.minDiscount ||
     filters.marketplace ||
     filters.dealType ||
@@ -51,7 +60,7 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
         {hasActiveFilters && (
           <button
             onClick={onReset}
-            className="flex items-center gap-1 text-xs font-semibold text-rose-600 hover:text-rose-700 transition-colors"
+            className="flex items-center gap-1 text-xs font-semibold text-rose-600 hover:text-rose-700 transition-colors cursor-pointer"
           >
             <RotateCcw size={12} />
             <span>Reset</span>
@@ -68,7 +77,7 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
           <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
             <button
               onClick={() => onChange({ ...filters, category: undefined })}
-              className={`w-full text-left text-xs px-2.5 py-1.5 rounded-lg transition-colors ${
+              className={`w-full text-left text-xs px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
                 !filters.category
                   ? 'bg-orange-50 text-orange-700 font-bold'
                   : 'text-slate-600 hover:bg-slate-50'
@@ -80,7 +89,7 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
               <button
                 key={cat.slug}
                 onClick={() => onChange({ ...filters, category: cat.slug })}
-                className={`w-full text-left text-xs px-2.5 py-1.5 rounded-lg transition-colors ${
+                className={`w-full text-left text-xs px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
                   filters.category === cat.slug
                     ? 'bg-orange-50 text-orange-700 font-bold'
                     : 'text-slate-600 hover:bg-slate-50'
@@ -93,30 +102,56 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
         </div>
       )}
 
-      {/* Minimum Discount */}
+      {/* Product Discount */}
       <div>
-        <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2.5">
-          Min Discount
-        </h4>
-        <div className="flex flex-wrap gap-1.5">
-          {discounts.map((pct) => (
+        <div className="flex items-center justify-between mb-2.5">
+          <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+            Product Discount
+          </h4>
+          {filters.discountRange !== undefined && (
             <button
-              key={pct}
+              type="button"
               onClick={() =>
                 onChange({
                   ...filters,
-                  minDiscount: filters.minDiscount === pct ? undefined : pct,
+                  discountRange: undefined,
+                  minDiscount: undefined,
+                  discountMin: undefined,
+                  discountMax: undefined,
                 })
               }
-              className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
-                filters.minDiscount === pct
-                  ? 'bg-red-600 text-white border-red-600 font-bold'
-                  : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300'
-              }`}
+              className="text-[11px] font-semibold text-rose-600 hover:text-rose-700 cursor-pointer"
             >
-              {pct}%+ OFF
+              Clear
             </button>
-          ))}
+          )}
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {PRODUCT_DISCOUNT_OPTIONS.map((opt) => {
+            const isSelected = filters.discountRange === opt.value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() =>
+                  onChange({
+                    ...filters,
+                    discountRange: isSelected ? undefined : opt.value,
+                    minDiscount: undefined,
+                    discountMin: undefined,
+                    discountMax: undefined,
+                  })
+                }
+                className={`text-xs px-2.5 py-1 rounded-full border transition-all cursor-pointer ${
+                  isSelected
+                    ? 'bg-orange-600 text-white border-orange-600 font-bold shadow-xs'
+                    : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                }`}
+              >
+                {opt.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 

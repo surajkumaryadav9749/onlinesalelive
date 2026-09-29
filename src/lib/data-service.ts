@@ -24,6 +24,7 @@ import { Review as ReviewModel } from '@/models/Review';
 import { Article as ArticleModel } from '@/models/Article';
 import { Comparison as ComparisonModel } from '@/models/Comparison';
 import { AffiliateClick as AffiliateClickModel } from '@/models/AffiliateClick';
+import { matchesDiscountRange } from '@/lib/filter-utils';
 
 // Helper to execute MongoDB query with mock fallback
 async function withDbFallback<T>(dbQuery: () => Promise<T>, fallback: () => T | Promise<T>): Promise<T> {
@@ -1154,6 +1155,26 @@ export async function getMajorDiscounts(minDiscount = 50): Promise<Product[]> {
       return docs.map(mapProduct);
     },
     () => mockProducts.filter((p) => p.discountPercent >= minDiscount)
+  );
+}
+
+export async function getProductsByDiscountRange(range: number, limit = 50): Promise<Product[]> {
+  const query: Record<string, unknown> = { isActive: { $ne: false } };
+  if (range >= 90) {
+    query.discountPercent = { $gte: 90 };
+  } else {
+    query.discountPercent = { $gte: range, $lt: range + 10 };
+  }
+  return withDbFallback(
+    async () => {
+      const docs = await ProductModel.find(query)
+        .populate('category')
+        .sort({ discountPercent: -1 })
+        .limit(limit)
+        .lean();
+      return docs.map(mapProduct);
+    },
+    () => mockProducts.filter((p) => matchesDiscountRange(p.discountPercent, range)).slice(0, limit)
   );
 }
 

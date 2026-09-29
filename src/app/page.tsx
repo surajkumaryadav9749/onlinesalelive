@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import {
   getAllCategories,
+  getAllProducts,
   getTodaysDeals,
   getPopularDeals,
   getMostClickedProducts,
@@ -13,6 +14,7 @@ import {
   getAllComparisons,
   getMajorDiscounts,
 } from '@/lib/data-service';
+import { HomeDiscountDiscovery } from '@/components/home/HomeDiscountDiscovery';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { ProductCard } from '@/components/products/ProductCard';
 import { DealCard } from '@/components/deals/DealCard';
@@ -55,6 +57,7 @@ export default async function HomePage() {
     guides,
     reviews,
     majorDiscounts,
+    allProducts,
   ] = await Promise.all([
     getAllCategories(),
     getTodaysDeals(4),
@@ -68,6 +71,7 @@ export default async function HomePage() {
     getAllGuides(),
     getAllReviews(),
     getMajorDiscounts(50),
+    getAllProducts(),
   ]);
 
   const hasAnyCatalogContent =
@@ -251,6 +255,11 @@ export default async function HomePage() {
               ))}
             </div>
           </section>
+        )}
+
+        {/* 3B. PRODUCT DISCOUNT DISCOVERY FILTER */}
+        {allProducts.length > 0 && (
+          <HomeDiscountDiscovery products={allProducts} />
         )}
 
         {/* 4. POPULAR CATEGORIES */}

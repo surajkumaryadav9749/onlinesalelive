@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Product, Category, FilterOptions, SortOption } from '@/types';
 import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
 import { ProductGrid } from '@/components/products/ProductGrid';
@@ -18,9 +19,44 @@ export const ProductsPageClient: React.FC<ProductsPageClientProps> = ({
   initialProducts,
   categories,
 }) => {
-  const [filters, setFilters] = useState<FilterOptions>({});
+  const searchParams = useSearchParams();
+
+  // Read discount from URL parameter if present
+  const urlDiscount = searchParams.get('discount');
+  const initialDiscount = useMemo(() => {
+    if (!urlDiscount) return undefined;
+    const num = parseInt(urlDiscount, 10);
+    return isNaN(num) ? undefined : num;
+  }, [urlDiscount]);
+
+  const [filters, setFilters] = useState<FilterOptions>(() => ({
+    discountRange: initialDiscount,
+  }));
+  const [prevInitialDiscount, setPrevInitialDiscount] = useState(initialDiscount);
+
+  // Sync if URL search params change externally (e.g. back/forward navigation)
+  if (prevInitialDiscount !== initialDiscount) {
+    setPrevInitialDiscount(initialDiscount);
+    setFilters((prev) => ({ ...prev, discountRange: initialDiscount }));
+  }
+
   const [sortBy, setSortBy] = useState<SortOption>('popular');
   const [searchTerm, setSearchTerm] = useState('');
+
+  const handleFiltersChange = (newFilters: FilterOptions) => {
+    setFilters(newFilters);
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (newFilters.discountRange !== undefined) {
+        params.set('discount', String(newFilters.discountRange));
+      } else {
+        params.delete('discount');
+      }
+      const newQuery = params.toString();
+      const newPath = newQuery ? `${window.location.pathname}?${newQuery}` : window.location.pathname;
+      window.history.replaceState(null, '', newPath);
+    }
+  };
 
   const filteredProducts = useMemo(() => {
     return filterAndSortProducts(
@@ -34,6 +70,13 @@ export const ProductsPageClient: React.FC<ProductsPageClientProps> = ({
     setFilters({});
     setSearchTerm('');
     setSortBy('popular');
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      params.delete('discount');
+      const newQuery = params.toString();
+      const newPath = newQuery ? `${window.location.pathname}?${newQuery}` : window.location.pathname;
+      window.history.replaceState(null, '', newPath);
+    }
   };
 
   return (
@@ -76,7 +119,7 @@ export const ProductsPageClient: React.FC<ProductsPageClientProps> = ({
         <div className="lg:col-span-1">
           <ProductFilters
             filters={filters}
-            onChange={setFilters}
+            onChange={handleFiltersChange}
             onReset={handleResetFilters}
             availableCategories={categories.map((c) => ({ slug: c.slug, name: c.name }))}
             showCategoryFilter={true}

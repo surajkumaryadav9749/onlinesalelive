@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { getAllProducts, getAllCategories } from '@/lib/data-service';
 import { ProductsPageClient } from './ProductsPageClient';
 import type { Metadata } from 'next';
@@ -36,5 +36,9 @@ export default async function ProductsPage() {
     getAllCategories(),
   ]);
 
-  return <ProductsPageClient initialProducts={products} categories={categories} />;
+  return (
+    <Suspense fallback={<div className="max-w-7xl mx-auto px-4 py-12 text-center text-slate-500 text-sm">Loading product catalog...</div>}>
+      <ProductsPageClient initialProducts={products} categories={categories} />
+    </Suspense>
+  );
 }

@@ -159,8 +159,10 @@ const ProductSchema = new Schema<IProduct>(
     },
     originalPrice: {
       type: Number,
-      required: [true, 'Original price is required'],
       min: 0,
+      default: function (this: { price?: number }) {
+        return this.price ?? 0;
+      },
     },
     discountPercent: {
       type: Number,
@@ -198,7 +200,7 @@ const ProductSchema = new Schema<IProduct>(
     },
     dealType: {
       type: String,
-      enum: ["Today's Deal", 'Sale', 'Major Discount', 'Flash Deal', 'Price Drop', 'Featured Deal'],
+      enum: ['Regular', "Today's Deal", 'Sale', 'Major Discount', 'Flash Deal', 'Price Drop', 'Featured Deal'],
       default: "Today's Deal",
       index: true,
     },

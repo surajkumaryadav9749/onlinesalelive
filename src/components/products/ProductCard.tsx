@@ -91,13 +91,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product, priority = fa
               ₹{product.price.toLocaleString('en-IN')}
             </span>
             {product.originalPrice > product.price && (
-              <span className="text-xs text-slate-400 line-through">
-                ₹{product.originalPrice.toLocaleString('en-IN')}
-              </span>
+              <>
+                <span className="text-xs text-slate-400 line-through">
+                  ₹{product.originalPrice.toLocaleString('en-IN')}
+                </span>
+                <span className="text-xs font-semibold text-emerald-600">
+                  Save ₹{(product.originalPrice - product.price).toLocaleString('en-IN')}
+                </span>
+              </>
             )}
-            <span className="text-xs font-semibold text-emerald-600">
-              Save ₹{(product.originalPrice - product.price).toLocaleString('en-IN')}
-            </span>
           </div>
 
           {/* Marketplace Badges */}

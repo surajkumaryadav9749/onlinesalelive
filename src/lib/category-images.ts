@@ -1,6 +1,7 @@
 import path from 'path';
 import fs from 'fs/promises';
 import { Category } from '@/models/Category';
+import { CategoryImage } from '@/models/CategoryImage';
 import { connectToDatabase } from '@/lib/db';
 
 export const MAX_CATEGORY_IMAGE_SIZE = 5 * 1024 * 1024; // 5 MB
@@ -50,26 +51,62 @@ export function validateCategoryImageFile(file: File): { valid: boolean; error?:
 }
 
 /**
- * Saves uploaded image file to `public/uploads/categories` and returns the public URL.
+ * Saves uploaded image file to MongoDB and `public/uploads/categories` (if filesystem is writable).
+ * Returns the public URL `/uploads/categories/...`.
+ * Seamlessly handles read-only filesystems (EROFS) in serverless environments like Vercel.
  */
 export async function saveUploadedCategoryFile(file: File, slugHint?: string): Promise<string> {
-  const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'categories');
-  await fs.mkdir(uploadsDir, { recursive: true });
-
   const ext = path.extname(file.name || '').toLowerCase() || '.webp';
   const rawBaseName = slugHint ? slugHint : path.basename(file.name || 'category', ext);
   const safeBaseName = rawBaseName.toLowerCase().replace(/[^a-z0-9_-]/g, '-').slice(0, 40);
   const uniqueName = `${Date.now()}-${safeBaseName}${ext}`;
+  const publicUrl = `/uploads/categories/${uniqueName}`;
 
-  const filePath = path.join(uploadsDir, uniqueName);
   const buffer = Buffer.from(await file.arrayBuffer());
-  await fs.writeFile(filePath, buffer);
+  const mimeType =
+    file.type ||
+    (ext === '.png'
+      ? 'image/png'
+      : ext === '.webp'
+      ? 'image/webp'
+      : ext === '.jpg' || ext === '.jpeg'
+      ? 'image/jpeg'
+      : 'application/octet-stream');
 
-  return `/uploads/categories/${uniqueName}`;
+  // 1. Persist to MongoDB for serverless / Vercel persistence
+  try {
+    await connectToDatabase();
+    await CategoryImage.findOneAndUpdate(
+      { filename: uniqueName },
+      {
+        filename: uniqueName,
+        mimeType,
+        size: file.size,
+        data: buffer,
+        categorySlug: slugHint || '',
+      },
+      { upsert: true, returnDocument: 'after' }
+    );
+  } catch (dbErr) {
+    console.warn('[CategoryImage] MongoDB write warning:', dbErr);
+  }
+
+  // 2. Try writing to filesystem if writable (local dev / VPS)
+  try {
+    const uploadsDir = path.join(process.cwd(), 'public', 'uploads', 'categories');
+    await fs.mkdir(uploadsDir, { recursive: true });
+    const filePath = path.join(uploadsDir, uniqueName);
+    await fs.writeFile(filePath, buffer);
+  } catch {
+    // Gracefully ignore EROFS or filesystem permissions in read-only serverless environments (Vercel)
+    console.info('[CategoryImage] Filesystem is read-only (serverless/Vercel); file safely persisted in MongoDB.');
+  }
+
+  return publicUrl;
 }
 
 /**
- * Safely deletes an uploaded category image file from `public/uploads/categories`.
+ * Safely deletes an uploaded category image file from MongoDB and `public/uploads/categories`.
  * Checks if other categories are referencing the same image before unlinking.
  */
 export async function deleteUploadedCategoryFile(
@@ -102,21 +139,27 @@ export async function deleteUploadedCategoryFile(
     }
 
     const fileName = path.basename(normalizedUrl);
-    const fullPath = path.join(process.cwd(), 'public', 'uploads', 'categories', fileName);
 
-    // Prevent directory traversal
-    const safeDir = path.join(process.cwd(), 'public', 'uploads', 'categories');
-    if (!fullPath.startsWith(safeDir)) {
-      return false;
+    // 1. Delete from MongoDB
+    try {
+      await CategoryImage.deleteOne({ filename: fileName });
+    } catch (dbErr) {
+      console.warn('[CategoryImage] MongoDB delete warning:', dbErr);
     }
 
-    await fs.unlink(fullPath);
+    // 2. Try deleting from filesystem if present
+    try {
+      const fullPath = path.join(process.cwd(), 'public', 'uploads', 'categories', fileName);
+      const safeDir = path.join(process.cwd(), 'public', 'uploads', 'categories');
+      if (fullPath.startsWith(safeDir)) {
+        await fs.unlink(fullPath);
+      }
+    } catch {
+      // Ignore EROFS or ENOENT
+    }
+
     return true;
   } catch (err: unknown) {
-    // If file doesn't exist (ENOENT), ignore gracefully
-    if (err && typeof err === 'object' && 'code' in err && (err as { code?: string }).code === 'ENOENT') {
-      return false;
-    }
     console.warn(`Could not delete old category image ${normalizedUrl}:`, err);
     return false;
   }

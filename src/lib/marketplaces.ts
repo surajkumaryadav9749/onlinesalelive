@@ -27,6 +27,7 @@ export const MARKETPLACE_CONFIGS: Record<MarketplaceName, MarketplaceConfig> = {
       'amzn.in',
       'amazon.com',
       'www.amazon.com',
+      'link.amazon',
     ],
   },
   Flipkart: {

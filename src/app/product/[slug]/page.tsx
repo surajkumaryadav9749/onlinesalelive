@@ -17,7 +17,6 @@ import { RelatedContentSection } from '@/components/content/RelatedContentSectio
 import {
   ShieldCheck,
   CheckCircle2,
-  XCircle,
   Clock,
   GitCompare,
   ArrowRight,
@@ -106,6 +105,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
               alt={product.name}
               fill
               priority
+              unoptimized
               sizes="(max-width: 1024px) 100vw, 40vw"
               className="object-contain p-4"
             />
@@ -161,36 +161,23 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
             </div>
           </div>
 
-          {/* Price Box */}
-          <div className="p-5 bg-white rounded-2xl border border-slate-200/90 shadow-2xs space-y-3">
-            <div className="flex items-baseline gap-3">
-              <span className="text-3xl font-black text-slate-900">
-                ₹{product.price.toLocaleString('en-IN')}
-              </span>
-              {product.originalPrice > product.price && (
-                <span className="text-base text-slate-400 line-through">
-                  ₹{product.originalPrice.toLocaleString('en-IN')}
-                </span>
-              )}
-              {product.originalPrice > product.price && product.discountPercent > 0 && (
-                <span className="text-sm font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
-                  Save ₹{(product.originalPrice - product.price).toLocaleString('en-IN')} ({product.discountPercent}%)
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-slate-500">
-              Inclusive of all taxes. Free delivery may apply depending on marketplace terms and prime membership.
-            </p>
+          {/* 1. PRIMARY MARKETPLACE PRICE COMPARISON & PURCHASE SECTION */}
+          <MarketplaceComparison
+            marketplaces={product.marketplaces}
+            productName={product.name}
+            productSlug={product.slug}
+          />
 
-            <div className="pt-2 flex flex-wrap items-center gap-3">
-              <Link
-                href={`/compare?productA=${product.slug}`}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3.5 py-2 rounded-xl transition-colors"
-              >
-                <GitCompare size={14} />
-                <span>Compare with other models</span>
-              </Link>
-            </div>
+          {/* Compare with other models (placed immediately below marketplace comparison) */}
+          <div className="pt-0.5">
+            <Link
+              href={`/compare?productA=${product.slug}`}
+              className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200/90 px-4 py-2.5 rounded-xl transition-all shadow-2xs hover:border-slate-300"
+            >
+              <GitCompare size={15} className="text-slate-600" />
+              <span>Compare with other models</span>
+              <ArrowRight size={14} className="text-slate-400" />
+            </Link>
           </div>
 
           {/* Short Description */}
@@ -203,14 +190,14 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
             </p>
           </div>
 
-          {/* Pros & Cons */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="bg-emerald-50/50 border border-emerald-200 rounded-2xl p-4 space-y-2">
+          {/* What's Great / Pros (Only rendered when pros exist, with Keep In Mind removed) */}
+          {product.pros && product.pros.length > 0 && (
+            <div className="bg-emerald-50/50 border border-emerald-200 rounded-2xl p-4 sm:p-5 space-y-3">
               <h4 className="text-xs font-bold text-emerald-900 uppercase tracking-wider flex items-center gap-1.5">
                 <CheckCircle2 size={16} className="text-emerald-600" />
                 <span>What&apos;s Great</span>
               </h4>
-              <ul className="space-y-1.5 text-xs text-emerald-950">
+              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 text-xs text-emerald-950">
                 {product.pros.map((pro, i) => (
                   <li key={i} className="flex items-start gap-1.5">
                     <span className="text-emerald-500 font-bold">•</span>
@@ -219,33 +206,9 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
                 ))}
               </ul>
             </div>
-
-            <div className="bg-rose-50/50 border border-rose-200 rounded-2xl p-4 space-y-2">
-              <h4 className="text-xs font-bold text-rose-900 uppercase tracking-wider flex items-center gap-1.5">
-                <XCircle size={16} className="text-rose-600" />
-                <span>Keep In Mind</span>
-              </h4>
-              <ul className="space-y-1.5 text-xs text-rose-950">
-                {product.cons.map((con, i) => (
-                  <li key={i} className="flex items-start gap-1.5">
-                    <span className="text-rose-400 font-bold">•</span>
-                    <span>{con}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
+          )}
         </div>
       </div>
-
-      {/* 2. MARKETPLACE PRICE COMPARISON SECTION */}
-      <section className="space-y-4 pt-4">
-        <MarketplaceComparison
-          marketplaces={product.marketplaces}
-          productName={product.name}
-          productSlug={product.slug}
-        />
-      </section>
 
       {/* 3. KEY SPECIFICATIONS TABLE */}
       <section className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 space-y-4 shadow-2xs">

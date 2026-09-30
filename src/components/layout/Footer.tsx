@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { Logo } from './Logo';
 import { Zap, Mail, CheckCircle2, ShieldCheck, Heart } from 'lucide-react';
 
 export const Footer: React.FC = () => {
@@ -76,14 +77,7 @@ export const Footer: React.FC = () => {
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 mb-12">
           {/* Brand Info */}
           <div className="col-span-2 md:col-span-4 lg:col-span-2 space-y-4">
-            <Link href="/" className="flex items-center gap-2 group">
-              <div className="w-8 h-8 rounded-lg bg-orange-600 flex items-center justify-center text-white">
-                <Zap size={18} />
-              </div>
-              <span className="text-xl font-black tracking-tight text-white">
-                OnlineSale<span className="text-orange-500">Live</span>
-              </span>
-            </Link>
+            <Logo size="md" theme="dark" />
             <p className="text-sm text-slate-400 leading-relaxed max-w-sm">
               OnlineSaleLive (onlinesalelive.in) is India&apos;s dedicated shopping deals and product-discovery engine. We research prices, aggregate seasonal sales, and compare offers across leading Indian marketplaces to help you save real money.
             </p>

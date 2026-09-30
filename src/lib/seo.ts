@@ -65,7 +65,7 @@ export function generateOrganizationSchema() {
     '@type': 'Organization',
     name: 'OnlineSaleLive',
     url: baseUrl,
-    logo: `${baseUrl}/icon.png`,
+    logo: `${baseUrl}/images/onlinesalelive-logo.png`,
     description: 'Independent Indian online shopping discovery, verified deals, and multi-store price comparisons.',
   };
 }
@@ -193,7 +193,7 @@ export function generateArticleSchema(params: {
       url: baseUrl,
       logo: {
         '@type': 'ImageObject',
-        url: `${baseUrl}/icon.png`,
+        url: `${baseUrl}/images/onlinesalelive-logo.png`,
       },
     },
   };

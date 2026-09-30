@@ -2,8 +2,9 @@
 
 import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Zap, Lock, Mail, AlertCircle, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Lock, Mail, AlertCircle, ArrowRight, ShieldCheck } from 'lucide-react';
 
 function LoginForm() {
   const router = useRouter();
@@ -49,9 +50,16 @@ function LoginForm() {
 
       <div className="w-full max-w-md relative z-10 space-y-8">
         {/* Brand Header */}
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-linear-to-tr from-orange-600 to-red-600 text-white shadow-lg shadow-orange-600/30 mb-2">
-            <Zap size={28} className="fill-white" />
+        <div className="flex flex-col items-center justify-center text-center space-y-2">
+          <div className="w-16 h-16 rounded-2xl bg-white p-1.5 flex items-center justify-center shadow-xl shadow-black/40 mb-2">
+            <Image
+              src="/images/onlinesalelive-logo.png"
+              alt="OnlineSaleLive"
+              width={64}
+              height={64}
+              priority
+              className="w-full h-full object-contain rounded-xl"
+            />
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
             OnlineSale<span className="text-orange-500">Live</span>

@@ -14,9 +14,9 @@ import {
   GitCompare,
   LogOut,
   ExternalLink,
-  Zap,
   Image as ImageIcon,
 } from 'lucide-react';
+import { Logo } from '@/components/layout/Logo';
 
 interface AdminSidebarProps {
   adminName?: string;
@@ -56,18 +56,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({
     <aside className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col justify-between shrink-0 min-h-screen">
       {/* Brand Header */}
       <div>
-        <div className="h-16 px-6 flex items-center gap-2.5 border-b border-slate-800">
-          <div className="w-9 h-9 rounded-xl bg-orange-600 text-white flex items-center justify-center shadow-md shadow-orange-600/30">
-            <Zap size={20} className="fill-white" />
-          </div>
-          <div className="flex flex-col">
-            <span className="font-extrabold text-sm text-white tracking-tight leading-tight">
-              OnlineSale<span className="text-orange-500">Live</span>
-            </span>
-            <span className="text-[10px] font-bold uppercase tracking-wider text-orange-400">
-              Admin CMS
-            </span>
-          </div>
+        <div className="h-16 px-6 flex items-center border-b border-slate-800">
+          <Logo size="sm" theme="dark" subtitle="Admin CMS" href="/admin" />
         </div>
 
         {/* Navigation Links */}

@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { Logo } from './Logo';
 import {
   Search,
   Menu,
@@ -67,24 +68,7 @@ export const Navbar: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 gap-4">
           {/* Brand Logo */}
-          <Link href="/" className="flex items-center gap-2 shrink-0 group">
-            <div className="w-10 h-10 rounded-xl bg-linear-to-tr from-orange-600 via-red-600 to-amber-500 flex items-center justify-center text-white shadow-md shadow-orange-500/20 group-hover:scale-105 transition-transform">
-              <Zap size={22} className="fill-white" />
-            </div>
-            <div className="flex flex-col">
-              <div className="flex items-center">
-                <span className="text-xl font-black tracking-tight text-slate-900">
-                  OnlineSale<span className="text-orange-600">Live</span>
-                </span>
-                <span className="ml-1 text-[10px] font-bold uppercase tracking-wider bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">
-                  IN
-                </span>
-              </div>
-              <span className="text-[10px] font-medium text-slate-500 -mt-1 hidden sm:block">
-                Smart Deals & Best Prices
-              </span>
-            </div>
-          </Link>
+          <Logo size="md" subtitle="Smart Deals & Best Prices" priority />
 
           {/* Prominent Search Bar (Desktop) */}
           <div className="hidden md:flex flex-1 max-w-lg mx-4">

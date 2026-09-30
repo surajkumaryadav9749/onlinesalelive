@@ -1,10 +1,17 @@
 import { ImageResponse } from 'next/og';
+import fs from 'fs';
+import path from 'path';
 
 export const alt = 'OnlineSaleLive | Best Deals, Sales & Discounts in India';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
 export default async function OpengraphImage() {
+  const filePath = path.join(process.cwd(), 'public', 'images', 'onlinesalelive-logo.png');
+  const buffer = fs.readFileSync(filePath);
+  const base64 = buffer.toString('base64');
+  const logoSrc = `data:image/png;base64,${base64}`;
+
   return new ImageResponse(
     (
       <div
@@ -31,17 +38,25 @@ export default async function OpengraphImage() {
         >
           <div
             style={{
-              width: 68,
-              height: 68,
-              borderRadius: 18,
-              background: 'linear-gradient(135deg, #ea580c 0%, #dc2626 100%)',
+              width: 72,
+              height: 72,
+              borderRadius: 20,
+              background: 'white',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: 38,
+              overflow: 'hidden',
+              padding: 6,
             }}
           >
-            ⚡
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={logoSrc}
+              alt="OnlineSaleLive"
+              width={60}
+              height={60}
+              style={{ objectFit: 'contain' }}
+            />
           </div>
           <div style={{ display: 'flex', alignItems: 'center', fontSize: 56, fontWeight: 900, letterSpacing: -1 }}>
             OnlineSale<span style={{ color: '#ea580c' }}>Live</span>

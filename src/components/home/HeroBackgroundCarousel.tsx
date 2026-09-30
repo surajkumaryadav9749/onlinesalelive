@@ -131,7 +131,7 @@ export const HeroBackgroundCarousel: React.FC<HeroBackgroundCarouselProps> = ({ 
               loading={index === 0 ? 'eager' : 'lazy'}
               sizes="100vw"
               unoptimized
-              className="object-cover object-center sm:object-right select-none pointer-events-none"
+              className="hero-banner-image select-none pointer-events-none transition-all duration-300"
               onError={() => handleImageError(bannerKey)}
             />
           </div>
@@ -139,10 +139,10 @@ export const HeroBackgroundCarousel: React.FC<HeroBackgroundCarouselProps> = ({ 
       })}
 
       {/* Subtle Readability Gradient:
-          Applied ONLY behind the LEFT text area on desktop so that the
-          RIGHT product visuals remain 100% sharp, clear, and completely uncovered. */}
+          Applied behind the text area so that the product visuals
+          remain sharp, clear, and uncovered while ensuring high text contrast. */}
       <div
-        className="absolute inset-0 z-1 pointer-events-none bg-linear-to-r from-white/85 via-white/40 to-transparent lg:w-[55%] xl:w-[50%]"
+        className="absolute inset-0 z-1 pointer-events-none bg-linear-to-r from-white/95 via-white/70 via-55% to-transparent sm:from-white/85 sm:via-white/40 sm:to-transparent lg:w-[55%] xl:w-[50%]"
         aria-hidden="true"
       />
 

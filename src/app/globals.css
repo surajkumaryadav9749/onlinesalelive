@@ -51,3 +51,19 @@ body {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* Responsive Hero Banner Image Positioning:
+   On mobile, positions the product cluster (at ~82%) in view on the right
+   while leaving the left/top clean for hero typography.
+   On tablets/desktop (min-width: 640px), preserves original desktop right-alignment. */
+.hero-banner-image {
+  object-fit: cover;
+  object-position: 82% 50% !important;
+}
+
+@media (min-width: 640px) {
+  .hero-banner-image {
+    object-position: right center !important;
+  }
+}
+

@@ -44,6 +44,9 @@ export const MARKETPLACE_CONFIGS: Record<MarketplaceName, MarketplaceConfig> = {
       'fkrt.it',
       'fkrt.co',
       'dl.flipkart.com',
+      'fktr.in',
+      'www.fktr.in',
+      'trackingv3.linkredirect.in',
     ],
   },
   Myntra: {
@@ -146,12 +149,22 @@ export function isAllowedMarketplaceUrl(
       return false;
     }
 
-    const host = parsed.hostname.toLowerCase();
+    const host = parsed.hostname.toLowerCase().replace(/\.$/, '');
 
-    // Check if host exactly matches or is a valid subdomain of an allowed domain
+    // Check if host matches allowed domains safely:
+    // 1. Exact match (e.g., 'flipkart.com', 'fktr.in', 'trackingv3.linkredirect.in')
+    // 2. Legitimate subdomain match (e.g., '*.flipkart.com', '*.fktr.in')
+    // Specific full hostnames like 'trackingv3.linkredirect.in' must only match exactly.
     return config.allowedDomains.some((allowed) => {
       const allowedLower = allowed.toLowerCase();
-      return host === allowedLower || host.endsWith('.' + allowedLower);
+      if (host === allowedLower) {
+        return true;
+      }
+      // Exact hostname restriction: do not permit arbitrary subdomains on specific tracking hostnames
+      if (allowedLower === 'trackingv3.linkredirect.in') {
+        return false;
+      }
+      return host.endsWith('.' + allowedLower);
     });
   } catch {
     return false;

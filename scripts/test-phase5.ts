@@ -349,6 +349,10 @@ async function runPhase5Tests() {
       'Flipkart domain must be allowed'
     );
     assert(
+      isAllowedMarketplaceUrl('Flipkart', 'https://fktr.in/tgWnhwK'),
+      'EarnKaro fktr.in domain must be allowed for Flipkart'
+    );
+    assert(
       isAllowedMarketplaceUrl('Myntra', 'https://www.myntra.com/tshirt/123'),
       'Myntra domain must be allowed'
     );

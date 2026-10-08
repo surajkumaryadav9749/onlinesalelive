@@ -72,8 +72,61 @@ async function runTests() {
   );
 
   assert(
+    'Valid direct Flipkart URL allowed (Requirement 14.A)',
+    isAllowedMarketplaceUrl('flipkart', 'https://www.flipkart.com/item/p/itm123?affid=test') === true &&
+      isAllowedMarketplaceUrl('Flipkart', 'https://flipkart.com/item/p/itm123') === true &&
+      isAllowedMarketplaceUrl('Flipkart', 'https://dl.flipkart.com/dl/item/p/itm123') === true
+  );
+
+  assert(
     'Valid Flipkart fkrt.it URL allowed',
     isAllowedMarketplaceUrl('Flipkart', 'https://fkrt.it/9xyz') === true
+  );
+
+  assert(
+    'Valid EarnKaro fktr.in URL allowed (Requirement 14.B)',
+    isAllowedMarketplaceUrl('flipkart', 'https://fktr.in/tgWnhwK') === true &&
+      isAllowedMarketplaceUrl('Flipkart', 'https://www.fktr.in/tgWnhwK') === true
+  );
+
+  assert(
+    'Legitimate EarnKaro redirect hostname trackingv3.linkredirect.in allowed (Requirement 14.C)',
+    isAllowedMarketplaceUrl('flipkart', 'https://trackingv3.linkredirect.in/visitretailer/2276?id=5697667&shareid=tgWnhwK') === true
+  );
+
+  assert(
+    'Unauthorized linkredirect hostnames rejected',
+    isAllowedMarketplaceUrl('Flipkart', 'https://linkredirect.in/visitretailer/2276') === false &&
+      isAllowedMarketplaceUrl('Flipkart', 'https://other.linkredirect.in/visitretailer/2276') === false &&
+      isAllowedMarketplaceUrl('Flipkart', 'https://evil.trackingv3.linkredirect.in/visitretailer/2276') === false
+  );
+
+  assert(
+    'Cross-marketplace: Amazon URL under Flipkart rejected (Requirement 14.D)',
+    isAllowedMarketplaceUrl('flipkart', 'https://www.amazon.in/dp/B0BDK62PDX') === false
+  );
+
+  assert(
+    'Arbitrary external URL rejected under Flipkart (Requirement 14.E)',
+    isAllowedMarketplaceUrl('flipkart', 'https://evil-phishing-site.com/steal-creds') === false
+  );
+
+  assert(
+    'Lookalike and malicious hostnames rejected (Requirement 14.F)',
+    isAllowedMarketplaceUrl('Flipkart', 'https://fktr.in.evil.com/deal') === false &&
+      isAllowedMarketplaceUrl('Flipkart', 'https://evil-fktr.in/deal') === false &&
+      isAllowedMarketplaceUrl('Flipkart', 'https://flipkart.com.evil.com/deal') === false &&
+      isAllowedMarketplaceUrl('Flipkart', 'https://evil-flipkart.com/deal') === false &&
+      isAllowedMarketplaceUrl('Flipkart', 'https://trackingv3.linkredirect.in.evil.com/deal') === false
+  );
+
+  assert(
+    'Malformed and non-HTTPS URLs rejected (Requirement 14.G)',
+    isAllowedMarketplaceUrl('Flipkart', 'http://fktr.in/tgWnhwK') === false &&
+      isAllowedMarketplaceUrl('Flipkart', 'javascript:alert(1)') === false &&
+      isAllowedMarketplaceUrl('Flipkart', 'not-a-valid-url') === false &&
+      isAllowedMarketplaceUrl('Flipkart', '#') === false &&
+      isAllowedMarketplaceUrl('Flipkart', '') === false
   );
 
   assert(

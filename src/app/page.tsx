@@ -29,10 +29,7 @@ import { ComparisonCard } from '@/components/compare/ComparisonCard';
 import {
   Zap,
   ArrowRight,
-  TrendingDown,
-  ShieldCheck,
   ShoppingBag,
-  Tag,
 } from 'lucide-react';
 import type { Metadata } from 'next';
 import { buildCanonicalUrl } from '@/lib/seo';
@@ -102,72 +99,15 @@ export default async function HomePage() {
   return (
     <div className="space-y-12 sm:space-y-16 pb-16">
       {/* 1. HERO SECTION */}
-      <section className="relative overflow-hidden border-b border-slate-200/80 min-h-[380px] sm:min-h-[540px] lg:min-h-[580px] xl:min-h-[600px] flex items-center py-6 sm:py-14 lg:py-16 bg-orange-50/40">
-        {/* Dynamic Background Banner Carousel */}
+      <section
+        className="relative w-full overflow-hidden border-b border-slate-200 hero-section-container flex items-center justify-center p-0 m-0 bg-slate-950"
+        aria-label="Promotional Offers and Banners"
+      >
+        <h1 className="sr-only">
+          Find the Best Deals, Sales & Discounts in India — OnlineSaleLive
+        </h1>
+        {/* Dynamic Banner Carousel (Displays only the uploaded banner image) */}
         <HeroBackgroundCarousel banners={heroBanners} />
-
-        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-left w-full lg:w-[48%] xl:w-[45%] max-w-xl lg:max-w-none mr-auto">
-            {/* Pill Tag */}
-            <div className="inline-flex items-center gap-1.5 sm:gap-2 bg-orange-100/70 border border-orange-200/90 text-slate-800 text-[11px] sm:text-sm font-semibold px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full mb-3 sm:mb-5 shadow-2xs max-w-full">
-              <Tag size={13} className="text-orange-600 shrink-0 sm:w-[15px] sm:h-[15px]" />
-              <span>Compare Live Offers Across Top Indian Marketplaces</span>
-            </div>
-
-            {/* Main Headline */}
-            <h1 className="text-3xl sm:text-5xl lg:text-[52px] xl:text-[58px] font-black text-slate-950 tracking-tight leading-[1.12] sm:leading-[1.1] max-w-[280px] sm:max-w-none">
-              Find the Best <span className="text-orange-600">Deals</span>,{' '}
-              <span className="text-red-600">Sales</span> & Discounts
-            </h1>
-
-            {/* Supporting Text */}
-            <p className="mt-2.5 sm:mt-5 text-xs sm:text-base text-slate-700 leading-relaxed font-normal max-w-[245px] sm:max-w-lg">
-              OnlineSaleLive helps you discover verified price drops, major discounts, expert buying guides, and multi-store price comparisons across <strong>Amazon, Flipkart, Myntra, AJIO</strong> and <strong>Meesho</strong>.
-            </p>
-
-            {/* CTAs */}
-            <div className="mt-4 sm:mt-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-start gap-2.5 sm:gap-4 max-w-[220px] sm:max-w-none">
-              <Link
-                href="/deals"
-                className="inline-flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white font-bold text-xs sm:text-base px-5 sm:px-7 py-2.5 sm:py-3.5 rounded-xl shadow-lg shadow-orange-600/25 transition-all transform hover:-translate-y-0.5"
-              >
-                <Zap size={16} className="sm:w-[18px] sm:h-[18px]" />
-                <span>Explore Deals</span>
-              </Link>
-              <Link
-                href="/categories"
-                className="inline-flex items-center justify-center gap-2 bg-white/95 hover:bg-white text-slate-800 border border-slate-300 font-bold text-xs sm:text-base px-5 sm:px-7 py-2.5 sm:py-3.5 rounded-xl shadow-xs transition-all hover:border-slate-400"
-              >
-                <span>Browse Categories</span>
-                <ArrowRight size={16} className="sm:w-[18px] sm:h-[18px]" />
-              </Link>
-            </div>
-
-            {/* Trust Badges */}
-            <div className="mt-4 sm:mt-8 pt-3 sm:pt-6 border-t border-slate-300/40 flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center justify-start gap-1.5 sm:gap-6 text-[11px] sm:text-xs font-semibold text-slate-600 max-w-[250px] sm:max-w-none">
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <ShieldCheck size={14} className="text-emerald-600 shrink-0 sm:w-4 sm:h-4" />
-                <span>100% Free & No Account Needed</span>
-              </div>
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <TrendingDown size={14} className="text-orange-600 shrink-0 sm:w-4 sm:h-4" />
-                <span>Price Drop Alerts & Comparison</span>
-              </div>
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                <ShoppingBag size={14} className="text-blue-600 shrink-0 sm:w-4 sm:h-4" />
-                <span>5+ Indian Marketplaces Tracked</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Decorative background blob (only shown when no custom hero banners exist) */}
-        {heroBanners.length === 0 && (
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-full pointer-events-none opacity-40">
-            <div className="absolute top-10 left-10 w-72 h-72 bg-orange-300/30 rounded-full blur-3xl" />
-            <div className="absolute top-20 right-10 w-80 h-80 bg-red-300/20 rounded-full blur-3xl" />
-          </div>
-        )}
       </section>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-14 sm:space-y-16">

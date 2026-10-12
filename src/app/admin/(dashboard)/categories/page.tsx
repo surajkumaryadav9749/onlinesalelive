@@ -64,7 +64,7 @@ export default function AdminCategoriesPage() {
     let ignore = false;
     const load = async () => {
       try {
-        const res = await fetch('/api/categories?all=true');
+        const res = await fetch('/api/categories?all=true', { cache: 'no-store' });
         const data = await res.json();
         if (!ignore) {
           if (data.success) {
@@ -197,6 +197,7 @@ export default function AdminCategoriesPage() {
                                 alt={cat.name}
                                 fill
                                 sizes="40px"
+                                unoptimized
                                 className="object-cover"
                               />
                             </div>

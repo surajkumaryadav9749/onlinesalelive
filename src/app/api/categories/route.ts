@@ -24,7 +24,9 @@ export async function GET(req: NextRequest) {
     }
 
     const categories = await Category.find(filter).sort({ name: 1 }).lean();
-    return successResponse(categories);
+    const response = successResponse(categories);
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    return response;
   } catch (err) {
     console.error('Error fetching categories:', err instanceof Error ? err.message : err);
     return errorResponse('Failed to fetch categories', 500);

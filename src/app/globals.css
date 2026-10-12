@@ -9,6 +9,7 @@
   --brand-accent: #ea580c;
   --brand-deal: #dc2626;
   --brand-save: #059669;
+  --actual-header-height: 136px;
 }
 
 body {
@@ -52,18 +53,29 @@ body {
   overflow: hidden;
 }
 
-/* Responsive Hero Banner Image Positioning:
-   On mobile, positions the product cluster (at ~82%) in view on the right
-   while leaving the left/top clean for hero typography.
-   On tablets/desktop (min-width: 640px), preserves original desktop right-alignment. */
-.hero-banner-image {
-  object-fit: cover;
-  object-position: 82% 50% !important;
+/* Responsive Homepage Hero Banner:
+   - On mobile: approximately 60% of viewport height (60svh with fallback)
+   - On desktop/laptop: dynamically calculated to fit within first screen (100svh minus header)
+   - Image maintains aspect ratio, centered, never distorted or cropped */
+.hero-section-container {
+  height: 60vh;
+  height: 60svh;
+  max-height: 540px;
+  min-height: 260px;
 }
 
-@media (min-width: 640px) {
-  .hero-banner-image {
-    object-position: right center !important;
+@media (min-width: 768px) {
+  .hero-section-container {
+    height: calc(100vh - var(--actual-header-height, 136px));
+    height: calc(100svh - var(--actual-header-height, 136px));
+    max-height: calc(100vh - var(--actual-header-height, 136px));
+    max-height: calc(100svh - var(--actual-header-height, 136px));
+    min-height: 380px;
   }
+}
+
+.hero-banner-image {
+  object-fit: contain;
+  object-position: center center !important;
 }
 

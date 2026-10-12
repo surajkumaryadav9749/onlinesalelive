@@ -255,7 +255,15 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({ initialData, isEdit 
           className="inline-flex items-center gap-2 px-5 py-2.5 bg-orange-600 hover:bg-orange-700 active:bg-orange-800 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
         >
           <Save size={15} />
-          <span>{saving ? 'Saving...' : isEdit ? 'Update Category' : 'Create Category'}</span>
+          <span>
+            {saving
+              ? selectedFile
+                ? 'Uploading Image & Saving...'
+                : 'Saving...'
+              : isEdit
+              ? 'Update Category'
+              : 'Create Category'}
+          </span>
         </button>
       </div>
 
@@ -329,6 +337,7 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({ initialData, isEdit 
                   src={previewUrl}
                   alt={formData.name || 'Category image'}
                   fill
+                  unoptimized
                   className="object-cover"
                 />
               </div>

@@ -147,7 +147,16 @@ async function runTestSuite() {
   }
 
   console.log('\n--- 4. MAXIMUM 5 ACTIVE BANNERS ENFORCEMENT & AUTO-DEACTIVATION ---');
-  {
+  // Snapshot non-test banners to isolate the max-5 active algorithm test
+  const nonTestBannersSnapshot = await HeroBanner.find({
+    title: { $not: new RegExp(`^${TEST_PREFIX}`) },
+  }).lean();
+  await HeroBanner.updateMany(
+    { title: { $not: new RegExp(`^${TEST_PREFIX}`) } },
+    { $set: { isActive: false } }
+  );
+
+  try {
     assert('MAX_ACTIVE_HERO_BANNERS is 5', MAX_ACTIVE_HERO_BANNERS === 5);
 
     // Clean up temporary banner created above
@@ -247,6 +256,11 @@ async function runTestSuite() {
       isActive: true,
     });
     assert('Active count remains strictly 5 after manual reactivation', activeAfterReactivate.length === 5);
+  } finally {
+    // Restore non-test banners to their original isActive states
+    for (const b of nonTestBannersSnapshot) {
+      await HeroBanner.findByIdAndUpdate(b._id, { $set: { isActive: b.isActive } });
+    }
   }
 
   console.log('\n--- 5. DEACTIVATION VS PERMANENT DELETION ---');

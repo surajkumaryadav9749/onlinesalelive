@@ -94,9 +94,20 @@ export const HeroBackgroundCarousel: React.FC<HeroBackgroundCarouselProps> = ({ 
     setImageErrors((prev) => ({ ...prev, [id]: true }));
   };
 
-  // Zero-banner fallback: keep original hero design
+  // Zero-banner fallback: clean fallback container
   if (bannerCount === 0) {
-    return null;
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-linear-to-r from-orange-500/10 via-amber-500/10 to-red-500/10 border-b border-slate-200">
+        <div className="text-center p-6 space-y-2">
+          <p className="text-sm sm:text-base font-bold text-slate-800">
+            India&apos;s Smart Shopping & Live Deals Engine
+          </p>
+          <p className="text-xs text-slate-500">
+            Compare verified discounts across Amazon, Flipkart, Myntra, AJIO & Meesho
+          </p>
+        </div>
+      </div>
+    );
   }
 
   const activeBanner = validBanners[currentIndex] || validBanners[0];
@@ -105,10 +116,10 @@ export const HeroBackgroundCarousel: React.FC<HeroBackgroundCarouselProps> = ({ 
   return (
     <div
       ref={containerRef}
-      className="absolute inset-0 overflow-hidden pointer-events-auto select-none"
+      className="relative w-full h-full overflow-hidden select-none bg-slate-950"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
-      aria-label="Promotional banners carousel"
+      aria-label="Promotional hero banner carousel"
     >
       {/* Background Banner Slides */}
       {validBanners.map((banner, index) => {
@@ -118,8 +129,8 @@ export const HeroBackgroundCarousel: React.FC<HeroBackgroundCarouselProps> = ({ 
         return (
           <div
             key={bannerKey}
-            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-              isActive ? 'opacity-100 z-0' : 'opacity-0 pointer-events-none z-0'
+            className={`absolute inset-0 transition-opacity duration-700 ease-in-out flex items-center justify-center ${
+              isActive ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none z-0'
             }`}
             aria-hidden={!isActive}
           >
@@ -131,34 +142,25 @@ export const HeroBackgroundCarousel: React.FC<HeroBackgroundCarouselProps> = ({ 
               loading={index === 0 ? 'eager' : 'lazy'}
               sizes="100vw"
               unoptimized
-              className="hero-banner-image select-none pointer-events-none transition-all duration-300"
+              className="hero-banner-image select-none transition-all duration-300"
               onError={() => handleImageError(bannerKey)}
             />
           </div>
         );
       })}
 
-      {/* Subtle Readability Gradient:
-          Applied behind the text area so that the product visuals
-          remain sharp, clear, and uncovered while ensuring high text contrast. */}
-      <div
-        className="absolute inset-0 z-1 pointer-events-none bg-linear-to-r from-white/95 via-white/70 via-55% to-transparent sm:from-white/85 sm:via-white/40 sm:to-transparent lg:w-[55%] xl:w-[50%]"
-        aria-hidden="true"
-      />
-
-      {/* Optional Clickable Destination Link Layer: Below hero buttons (z-10), above background */}
+      {/* Optional Clickable Destination Link Layer: Click anywhere on the active banner to visit deal */}
       {hasLink && (
         <Link
           href={activeBanner.linkUrl!}
-          className="absolute inset-0 z-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-500/50"
-          aria-label={`View deal: ${activeBanner.title}`}
-          tabIndex={-1}
+          className="absolute inset-0 z-20 cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-500/50"
+          aria-label={`View offer: ${activeBanner.title}`}
         />
       )}
 
       {/* Slide Indicators: Subtle dots when multiple banners exist */}
       {bannerCount > 1 && (
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900/20">
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900/60 backdrop-blur-xs">
           {validBanners.map((b, idx) => {
             const isSelected = idx === currentIndex;
             return (
@@ -171,7 +173,7 @@ export const HeroBackgroundCarousel: React.FC<HeroBackgroundCarouselProps> = ({ 
                 }}
                 className={`transition-all duration-300 cursor-pointer ${
                   isSelected
-                    ? 'w-6 h-1.5 rounded-full bg-orange-600 shadow-xs'
+                    ? 'w-6 h-1.5 rounded-full bg-orange-500 shadow-xs'
                     : 'w-1.5 h-1.5 rounded-full bg-white/70 hover:bg-white'
                 }`}
                 aria-label={`Go to banner ${idx + 1} of ${bannerCount}: ${b.title}`}

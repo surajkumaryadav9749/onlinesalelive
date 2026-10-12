@@ -25,7 +25,9 @@ export async function GET(req: NextRequest, { params }: Params) {
     const category = await Category.findOne(query).lean();
 
     if (!category) return errorResponse('Category not found', 404);
-    return successResponse(category);
+    const response = successResponse(category);
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    return response;
   } catch (err) {
     console.error('Error fetching category:', err instanceof Error ? err.message : err);
     return errorResponse('Failed to fetch category', 500);

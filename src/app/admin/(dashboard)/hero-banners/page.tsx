@@ -17,6 +17,8 @@ import {
   X,
   Clock,
   ArrowUpDown,
+  Edit2,
+  RefreshCw,
 } from 'lucide-react';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 
@@ -40,6 +42,7 @@ export default function AdminHeroBannersPage() {
 
   // Form state
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingBanner, setEditingBanner] = useState<BannerItem | null>(null);
   const [title, setTitle] = useState('');
   const [linkUrl, setLinkUrl] = useState('');
   const [displayOrder, setDisplayOrder] = useState<number>(0);
@@ -117,6 +120,9 @@ export default function AdminHeroBannersPage() {
     setSelectedFile(file);
 
     // Create preview
+    if (filePreview && filePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(filePreview);
+    }
     const previewUrl = URL.createObjectURL(file);
     setFilePreview(previewUrl);
   };
@@ -127,14 +133,35 @@ export default function AdminHeroBannersPage() {
     setDisplayOrder(0);
     setIsActive(true);
     setSelectedFile(null);
-    if (filePreview) {
+    if (filePreview && filePreview.startsWith('blob:')) {
       URL.revokeObjectURL(filePreview);
-      setFilePreview('');
     }
+    setFilePreview('');
     setImageUrlInput('');
     setUseUrlInput(false);
+    setEditingBanner(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
     setIsFormOpen(false);
+  };
+
+  const handleStartEdit = (banner: BannerItem) => {
+    setErrorMessage(null);
+    setSuccessMessage(null);
+    setEditingBanner(banner);
+    setTitle(banner.title);
+    setLinkUrl(banner.linkUrl || '');
+    setDisplayOrder(banner.displayOrder || 0);
+    setIsActive(banner.isActive);
+    setSelectedFile(null);
+    if (filePreview && filePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(filePreview);
+    }
+    const isLocalOrBlob = banner.imageUrl?.startsWith('/uploads/');
+    setUseUrlInput(!isLocalOrBlob);
+    setImageUrlInput(banner.imageUrl || '');
+    setFilePreview(banner.imageUrl || '');
+    setIsFormOpen(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -147,18 +174,25 @@ export default function AdminHeroBannersPage() {
       return;
     }
 
-    if (!useUrlInput && !selectedFile) {
-      setErrorMessage('Please select an image file to upload.');
-      return;
-    }
+    if (!editingBanner) {
+      if (!useUrlInput && !selectedFile) {
+        setErrorMessage('Please select an image file to upload.');
+        return;
+      }
 
-    if (useUrlInput && !imageUrlInput.trim()) {
-      setErrorMessage('Please enter an image URL.');
-      return;
+      if (useUrlInput && !imageUrlInput.trim()) {
+        setErrorMessage('Please enter an image URL.');
+        return;
+      }
     }
 
     try {
       setActionLoading(true);
+
+      const url = editingBanner
+        ? `/api/admin/hero-banners/${editingBanner._id}`
+        : '/api/admin/hero-banners';
+      const method = editingBanner ? 'PATCH' : 'POST';
 
       let res: Response;
 
@@ -170,31 +204,37 @@ export default function AdminHeroBannersPage() {
         formData.append('isActive', String(isActive));
         formData.append('file', selectedFile);
 
-        res = await fetch('/api/admin/hero-banners', {
-          method: 'POST',
+        res = await fetch(url, {
+          method,
           body: formData,
         });
       } else {
-        res = await fetch('/api/admin/hero-banners', {
-          method: 'POST',
+        const payload: Record<string, unknown> = {
+          title: title.trim(),
+          linkUrl: linkUrl.trim(),
+          displayOrder,
+          isActive,
+        };
+        if (useUrlInput && imageUrlInput.trim()) {
+          payload.imageUrl = imageUrlInput.trim();
+        }
+
+        res = await fetch(url, {
+          method,
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: title.trim(),
-            linkUrl: linkUrl.trim(),
-            displayOrder,
-            isActive,
-            imageUrl: imageUrlInput.trim(),
-          }),
+          body: JSON.stringify(payload),
         });
       }
 
       const data = await res.json();
       if (data.success) {
-        setSuccessMessage(data.data?.message || 'Banner saved successfully');
+        setSuccessMessage(
+          data.data?.message || (editingBanner ? 'Banner updated successfully' : 'Banner saved successfully')
+        );
         handleResetForm();
         await fetchBanners();
       } else {
-        setErrorMessage(data.error || 'Failed to upload banner');
+        setErrorMessage(data.error || 'Failed to save banner');
       }
     } catch {
       setErrorMessage('An unexpected error occurred while saving the banner.');
@@ -321,19 +361,23 @@ export default function AdminHeroBannersPage() {
         </div>
       )}
 
-      {/* Upload New Banner Drawer / Form */}
+      {/* Upload / Edit Banner Drawer / Form */}
       {isFormOpen && (
         <div className="bg-white rounded-2xl border border-orange-200 p-6 shadow-sm space-y-6">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div>
-              <h3 className="font-bold text-slate-900 text-sm">Upload Hero Background Banner</h3>
+              <h3 className="font-bold text-slate-900 text-sm">
+                {editingBanner ? 'Edit & Replace Hero Banner' : 'Upload Hero Background Banner'}
+              </h3>
               <p className="text-xs text-slate-500">
-                Recommended aspect ratio: 16:9 or 21:9 landscape (1920x800 or 1920x1080).
+                {editingBanner
+                  ? `Editing: ${editingBanner.title} (Upload a replacement image or modify display priority order/destination)`
+                  : 'Recommended aspect ratio: 16:9 or 21:9 landscape (1920x800 or 1920x1080).'}
               </p>
             </div>
             <button
               onClick={handleResetForm}
-              className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+              className="text-slate-400 hover:text-slate-600 p-1 rounded-lg cursor-pointer"
             >
               <X size={16} />
             </button>
@@ -378,7 +422,7 @@ export default function AdminHeroBannersPage() {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                  Banner Image <span className="text-rose-500">*</span>
+                  Banner Image {editingBanner ? '(Optional to replace)' : <span className="text-rose-500">*</span>}
                 </label>
                 <div className="flex items-center gap-2 text-xs">
                   <button
@@ -425,7 +469,11 @@ export default function AdminHeroBannersPage() {
                         <UploadCloud size={20} />
                       </div>
                       <div className="text-xs font-bold text-slate-800">
-                        {selectedFile ? selectedFile.name : 'Click to upload banner image file'}
+                        {selectedFile
+                          ? selectedFile.name
+                          : editingBanner
+                          ? 'Click to select a replacement banner image file'
+                          : 'Click to upload banner image file'}
                       </div>
                       <div className="text-[11px] text-slate-400">
                         Supports WebP, PNG, JPG/JPEG (Max 5 MB)
@@ -434,15 +482,16 @@ export default function AdminHeroBannersPage() {
                   </div>
 
                   {filePreview && (
-                    <div className="relative w-full h-44 rounded-xl overflow-hidden border border-slate-200 shadow-2xs">
+                    <div className="relative w-full h-44 rounded-xl overflow-hidden border border-slate-200 shadow-2xs bg-slate-900">
                       <Image
                         src={filePreview}
                         alt="Banner Preview"
                         fill
-                        className="object-cover"
+                        unoptimized
+                        className="object-contain"
                       />
-                      <div className="absolute bottom-2 left-2 px-2.5 py-1 bg-slate-900/70 text-white text-[11px] font-medium rounded-md backdrop-blur-xs">
-                        Image Preview (Live)
+                      <div className="absolute bottom-2 left-2 px-2.5 py-1 bg-slate-900/80 text-white text-[11px] font-medium rounded-md backdrop-blur-xs">
+                        {selectedFile ? 'New Selected Image Preview' : 'Current Banner Image'}
                       </div>
                     </div>
                   )}
@@ -457,15 +506,16 @@ export default function AdminHeroBannersPage() {
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500"
                   />
                   {imageUrlInput && (
-                    <div className="relative w-full h-44 rounded-xl overflow-hidden border border-slate-200 shadow-2xs">
+                    <div className="relative w-full h-44 rounded-xl overflow-hidden border border-slate-200 shadow-2xs bg-slate-900">
                       <Image
                         src={imageUrlInput}
                         alt="URL Preview"
                         fill
-                        className="object-cover"
+                        unoptimized
+                        className="object-contain"
                         onError={() => setErrorMessage('Failed to load image preview from this URL')}
                       />
-                      <div className="absolute bottom-2 left-2 px-2.5 py-1 bg-slate-900/70 text-white text-[11px] font-medium rounded-md backdrop-blur-xs">
+                      <div className="absolute bottom-2 left-2 px-2.5 py-1 bg-slate-900/80 text-white text-[11px] font-medium rounded-md backdrop-blur-xs">
                         Image Preview (URL)
                       </div>
                     </div>
@@ -523,7 +573,12 @@ export default function AdminHeroBannersPage() {
                 {actionLoading ? (
                   <>
                     <Loader2 size={14} className="animate-spin" />
-                    <span>Uploading...</span>
+                    <span>Saving...</span>
+                  </>
+                ) : editingBanner ? (
+                  <>
+                    <RefreshCw size={14} />
+                    <span>Update Banner</span>
                   </>
                 ) : (
                   <>
@@ -589,12 +644,13 @@ export default function AdminHeroBannersPage() {
                   {/* Left: Thumbnail & Details */}
                   <div className="flex items-start sm:items-center gap-4 min-w-0">
                     {/* Thumbnail Preview */}
-                    <div className="relative w-28 h-18 sm:w-36 sm:h-20 rounded-xl overflow-hidden border border-slate-200 shrink-0 bg-slate-100 shadow-2xs">
+                    <div className="relative w-28 h-18 sm:w-36 sm:h-20 rounded-xl overflow-hidden border border-slate-200 shrink-0 bg-slate-900 shadow-2xs">
                       <Image
                         src={banner.imageUrl}
                         alt={banner.title}
                         fill
-                        className="object-cover"
+                        unoptimized
+                        className="object-contain"
                       />
                     </div>
 
@@ -640,13 +696,22 @@ export default function AdminHeroBannersPage() {
                           <span>Created: {formattedDate}</span>
                         </span>
                         <span>•</span>
-                        <span>Order: {banner.displayOrder}</span>
+                        <span className="font-semibold text-slate-600">Order: {banner.displayOrder}</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Right: Actions */}
                   <div className="flex items-center gap-2 self-end md:self-center shrink-0">
+                    <button
+                      onClick={() => handleStartEdit(banner)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 transition-colors cursor-pointer"
+                      title="Edit banner details or replace image"
+                    >
+                      <Edit2 size={12} />
+                      <span>Edit / Replace</span>
+                    </button>
+
                     <button
                       onClick={() => handleToggleStatus(banner)}
                       className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors cursor-pointer ${

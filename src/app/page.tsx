@@ -97,7 +97,7 @@ export default async function HomePage() {
     discoveryData.categories.length > 0;
 
   return (
-    <div className="space-y-12 sm:space-y-16 pb-16">
+    <div className="pb-16">
       {/* 1. HERO SECTION */}
       <section
         className="relative w-full overflow-hidden border-b border-slate-200 hero-section-container flex items-center justify-center p-0 m-0 bg-slate-900"
@@ -110,7 +110,7 @@ export default async function HomePage() {
         <HeroBackgroundCarousel banners={heroBanners} />
       </section>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-14 sm:space-y-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 sm:mt-10 space-y-12 sm:space-y-16">
         {/* NEW SECTION: Shop by Deals, Budget & Categories */}
         <HomeDealsBudgetCategories data={discoveryData} />
 

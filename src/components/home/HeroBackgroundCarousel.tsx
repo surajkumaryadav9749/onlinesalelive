@@ -125,7 +125,8 @@ export const HeroBackgroundCarousel: React.FC<HeroBackgroundCarouselProps> = ({ 
       {validBanners.map((banner, index) => {
         const isActive = index === currentIndex;
         const bannerKey = banner._id || banner.id || `banner-${index}`;
-        const activeImageUrl = banner.mobileImageUrl || banner.imageUrl;
+        const mobileBlurUrl = banner.mobileImageUrl || banner.imageUrl;
+        const desktopBlurUrl = banner.imageUrl;
 
         return (
           <div
@@ -136,13 +137,26 @@ export const HeroBackgroundCarousel: React.FC<HeroBackgroundCarouselProps> = ({ 
             aria-hidden={!isActive}
           >
             {/* Subtle ambient blur background fill to eliminate stark dark letterboxing */}
-            <div
-              className="absolute inset-0 bg-cover bg-center filter blur-3xl opacity-25 scale-110 pointer-events-none transition-all duration-700"
-              style={{
-                backgroundImage: `url(${activeImageUrl})`,
-              }}
-              aria-hidden="true"
-            />
+            {banner.mobileImageUrl ? (
+              <>
+                <div
+                  className="md:hidden absolute inset-0 bg-cover bg-center filter blur-3xl opacity-30 scale-110 pointer-events-none transition-all duration-700"
+                  style={{ backgroundImage: `url(${mobileBlurUrl})` }}
+                  aria-hidden="true"
+                />
+                <div
+                  className="hidden md:block absolute inset-0 bg-cover bg-center filter blur-3xl opacity-25 scale-110 pointer-events-none transition-all duration-700"
+                  style={{ backgroundImage: `url(${desktopBlurUrl})` }}
+                  aria-hidden="true"
+                />
+              </>
+            ) : (
+              <div
+                className="absolute inset-0 bg-cover bg-center filter blur-3xl opacity-25 scale-110 pointer-events-none transition-all duration-700"
+                style={{ backgroundImage: `url(${desktopBlurUrl})` }}
+                aria-hidden="true"
+              />
+            )}
 
             {/* Responsive Banner Picture: switches natively between mobile & desktop image */}
             <picture className="relative w-full h-full flex items-center justify-center z-10">

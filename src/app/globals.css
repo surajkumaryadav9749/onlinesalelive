@@ -54,15 +54,19 @@ body {
 }
 
 /* Responsive Homepage Hero Banner:
-   - On mobile: approximately 60% of viewport height (60svh with fallback)
+   - On mobile: exactly 50% of visible viewport height (50svh with 50vh fallback)
    - On desktop/laptop: dynamically calculated to fit within first screen (100svh minus header)
    - Image maintains aspect ratio, centered, never distorted or cropped */
 .hero-section-container {
-  height: 60vh;
-  height: 60svh;
-  max-height: calc(100vh - var(--actual-header-height, 110px));
-  max-height: calc(100svh - var(--actual-header-height, 110px));
-  min-height: 240px;
+  height: 50vh;
+  height: 50svh;
+  max-height: 50vh;
+  max-height: 50svh;
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
 }
 
 @media (min-width: 768px) {

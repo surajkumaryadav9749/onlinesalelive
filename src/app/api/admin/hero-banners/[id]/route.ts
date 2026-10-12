@@ -63,9 +63,12 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
     let title: string | undefined;
     let linkUrl: string | undefined;
     let imageUrl: string | undefined;
+    let mobileImageUrl: string | undefined;
     let isActive: boolean | undefined;
     let displayOrder: number | undefined;
     let replacementFile: File | null = null;
+    let replacementMobileFile: File | null = null;
+    let removeMobileImage = false;
 
     if (contentType.includes('multipart/form-data')) {
       const formData = await req.formData();
@@ -95,18 +98,36 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
       if (fileEntry && typeof fileEntry !== 'string' && fileEntry.size > 0) {
         replacementFile = fileEntry as File;
       }
+
+      const mobileFileEntry = formData.get('mobileFile') ?? formData.get('mobileImage');
+      if (mobileFileEntry && typeof mobileFileEntry !== 'string' && mobileFileEntry.size > 0) {
+        replacementMobileFile = mobileFileEntry as File;
+      }
+
+      const rawMobileImageUrl = formData.get('mobileImageUrl');
+      if (typeof rawMobileImageUrl === 'string') {
+        mobileImageUrl = rawMobileImageUrl.trim();
+      }
+
+      const rawRemoveMobile = formData.get('removeMobileImage');
+      if (rawRemoveMobile === 'true' || rawRemoveMobile === '1') {
+        removeMobileImage = true;
+      }
     } else {
       const body = await req.json().catch(() => ({}));
       if (body.title !== undefined) title = String(body.title).trim();
       if (body.linkUrl !== undefined) linkUrl = String(body.linkUrl).trim();
       if (body.imageUrl !== undefined) imageUrl = String(body.imageUrl).trim();
+      if (body.mobileImageUrl !== undefined) mobileImageUrl = String(body.mobileImageUrl).trim();
+      if (body.removeMobileImage === true) removeMobileImage = true;
       if (body.isActive !== undefined) isActive = Boolean(body.isActive);
       if (body.displayOrder !== undefined) displayOrder = Number(body.displayOrder) || 0;
     }
 
     const oldImageUrl = existing.imageUrl || '';
+    const oldMobileImageUrl = existing.mobileImageUrl || '';
 
-    // Handle image file upload replacement
+    // Handle desktop image file upload replacement
     if (replacementFile) {
       const validation = validateBannerImageFile(replacementFile);
       if (!validation.valid) {
@@ -123,6 +144,36 @@ export async function PATCH(req: NextRequest, context: RouteContext) {
         await deleteUploadedBannerFile(oldImageUrl, id);
       }
       existing.imageUrl = imageUrl;
+    }
+
+    // Handle mobile image replacement or independent removal
+    if (removeMobileImage) {
+      if (oldMobileImageUrl) {
+        await deleteUploadedBannerFile(oldMobileImageUrl, id);
+      }
+      existing.mobileImageUrl = '';
+    } else if (replacementMobileFile) {
+      const mobileVal = validateBannerImageFile(replacementMobileFile);
+      if (!mobileVal.valid) {
+        return errorResponse(mobileVal.error || 'Invalid mobile banner image file', 400);
+      }
+      const newMobileUrl = await saveUploadedBannerFile(replacementMobileFile);
+      if (oldMobileImageUrl && oldMobileImageUrl !== newMobileUrl) {
+        await deleteUploadedBannerFile(oldMobileImageUrl, id);
+      }
+      existing.mobileImageUrl = newMobileUrl;
+    } else if (mobileImageUrl !== undefined) {
+      if (mobileImageUrl === '') {
+        if (oldMobileImageUrl) {
+          await deleteUploadedBannerFile(oldMobileImageUrl, id);
+        }
+        existing.mobileImageUrl = '';
+      } else {
+        if (oldMobileImageUrl && oldMobileImageUrl !== mobileImageUrl) {
+          await deleteUploadedBannerFile(oldMobileImageUrl, id);
+        }
+        existing.mobileImageUrl = mobileImageUrl;
+      }
     }
 
     let deactivatedOldest = false;
@@ -184,6 +235,9 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
 
       if (existing.imageUrl) {
         await deleteUploadedBannerFile(existing.imageUrl, id);
+      }
+      if (existing.mobileImageUrl) {
+        await deleteUploadedBannerFile(existing.mobileImageUrl, id);
       }
 
       await HeroBanner.findByIdAndDelete(id);

@@ -308,6 +308,62 @@ async function runTestSuite() {
     assert('Returned banners contain persistent imageUrls', activeBanners.some(b => b.imageUrl.startsWith('http')));
   }
 
+  console.log('\n--- 7. SEPARATE DESKTOP & MOBILE BANNER MANAGEMENT TESTS ---');
+  {
+    // A. Create banner with separate desktop and mobile image URLs
+    const desktopMobileBanner = await HeroBanner.create({
+      title: `${TEST_PREFIX}Dual Image Banner`,
+      imageUrl: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=2000',
+      mobileImageUrl: 'https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=750',
+      linkUrl: '/deals/mobile-special',
+      isActive: true,
+      displayOrder: 1,
+    });
+
+    assert('Banner created with both desktop and mobile image URLs', Boolean(desktopMobileBanner._id));
+    assert('Desktop image URL stored correctly', desktopMobileBanner.imageUrl.includes('2000'));
+    assert('Mobile image URL stored correctly', Boolean(desktopMobileBanner.mobileImageUrl?.includes('750')));
+
+    // B. Create banner WITHOUT mobile image (fallback behavior)
+    const fallbackBanner = await HeroBanner.create({
+      title: `${TEST_PREFIX}Desktop Only Fallback Banner`,
+      imageUrl: 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=2000',
+      isActive: true,
+      displayOrder: 2,
+    });
+
+    assert('Banner created without mobile image has empty mobileImageUrl default', fallbackBanner.mobileImageUrl === '');
+
+    // C. Independent replacement of mobile image without touching desktop image
+    const updatedMobileBanner = await HeroBanner.findByIdAndUpdate(
+      desktopMobileBanner._id,
+      { $set: { mobileImageUrl: 'https://images.unsplash.com/photo-replaced-mobile?w=750' } },
+      { new: true }
+    );
+
+    assert('Mobile image replaced independently', updatedMobileBanner?.mobileImageUrl?.includes('replaced-mobile') === true);
+    assert('Desktop image preserved during mobile replacement', updatedMobileBanner?.imageUrl.includes('2000') === true);
+
+    // D. Independent removal of mobile image (reverts to desktop fallback)
+    const removedMobileBanner = await HeroBanner.findByIdAndUpdate(
+      desktopMobileBanner._id,
+      { $set: { mobileImageUrl: '' } },
+      { new: true }
+    );
+
+    assert('Mobile image removed independently', removedMobileBanner?.mobileImageUrl === '');
+    assert('Desktop image still preserved after mobile removal', Boolean(removedMobileBanner?.imageUrl));
+
+    // E. getActiveHeroBanners maps mobileImageUrl properly
+    const bannersWithMobile = await getActiveHeroBanners(10);
+    const foundDual = bannersWithMobile.find(b => b.title === `${TEST_PREFIX}Dual Image Banner`);
+    assert('getActiveHeroBanners returns mobileImageUrl field in output', foundDual !== undefined && typeof foundDual.mobileImageUrl === 'string');
+
+    // Clean up Section 7 test banners
+    await HeroBanner.deleteOne({ _id: desktopMobileBanner._id });
+    await HeroBanner.deleteOne({ _id: fallbackBanner._id });
+  }
+
   // Final cleanup
   await HeroBanner.deleteMany({ title: new RegExp(`^${TEST_PREFIX}`) });
   console.log('\nCleaned up all temporary test banner records.');

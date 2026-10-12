@@ -139,7 +139,9 @@ export async function deleteFileFromStorage(
     await connectToDatabase();
 
     if (folder === 'banners') {
-      const query: Record<string, unknown> = { imageUrl: normalizedUrl };
+      const query: Record<string, unknown> = {
+        $or: [{ imageUrl: normalizedUrl }, { mobileImageUrl: normalizedUrl }],
+      };
       if (excludeId) query._id = { $ne: excludeId };
       const count = await HeroBanner.countDocuments(query);
       if (count > 0) {
@@ -174,7 +176,9 @@ export async function deleteFileFromStorage(
     await connectToDatabase();
 
     if (folder === 'banners') {
-      const query: Record<string, unknown> = { imageUrl: normalizedUrl };
+      const query: Record<string, unknown> = {
+        $or: [{ imageUrl: normalizedUrl }, { mobileImageUrl: normalizedUrl }],
+      };
       if (excludeId) query._id = { $ne: excludeId };
       const count = await HeroBanner.countDocuments(query);
       if (count > 0) return false;

@@ -106,6 +106,7 @@ export interface HeroBanner {
   _id?: string;
   title: string;
   imageUrl: string;
+  mobileImageUrl?: string;
   linkUrl?: string;
   isActive: boolean;
   displayOrder?: number;

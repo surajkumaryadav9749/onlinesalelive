@@ -3,6 +3,7 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 export interface IHeroBanner extends Document {
   title: string;
   imageUrl: string;
+  mobileImageUrl?: string;
   linkUrl?: string;
   isActive: boolean;
   displayOrder: number;
@@ -21,6 +22,11 @@ const HeroBannerSchema = new Schema<IHeroBanner>(
     imageUrl: {
       type: String,
       required: [true, 'Banner image URL is required'],
+      trim: true,
+    },
+    mobileImageUrl: {
+      type: String,
+      default: '',
       trim: true,
     },
     linkUrl: {

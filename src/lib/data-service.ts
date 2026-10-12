@@ -1765,6 +1765,7 @@ export async function getActiveHeroBanners(limit: number = 5): Promise<HeroBanne
         _id: { toString(): string };
         title: string;
         imageUrl: string;
+        mobileImageUrl?: string;
         linkUrl?: string;
         isActive?: boolean;
         displayOrder?: number;
@@ -1775,6 +1776,7 @@ export async function getActiveHeroBanners(limit: number = 5): Promise<HeroBanne
         _id: b._id.toString(),
         title: b.title,
         imageUrl: b.imageUrl,
+        mobileImageUrl: b.mobileImageUrl || '',
         linkUrl: b.linkUrl || '',
         isActive: Boolean(b.isActive),
         displayOrder: b.displayOrder ?? 0,

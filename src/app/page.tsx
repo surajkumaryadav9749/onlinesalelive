@@ -100,7 +100,7 @@ export default async function HomePage() {
     <div className="space-y-12 sm:space-y-16 pb-16">
       {/* 1. HERO SECTION */}
       <section
-        className="relative w-full overflow-hidden border-b border-slate-200 hero-section-container flex items-center justify-center p-0 m-0 bg-slate-950"
+        className="relative w-full overflow-hidden border-b border-slate-200 hero-section-container flex items-center justify-center p-0 m-0 bg-slate-900"
         aria-label="Promotional Offers and Banners"
       >
         <h1 className="sr-only">

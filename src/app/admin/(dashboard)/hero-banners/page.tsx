@@ -19,6 +19,8 @@ import {
   ArrowUpDown,
   Edit2,
   RefreshCw,
+  Monitor,
+  Smartphone,
 } from 'lucide-react';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 
@@ -26,6 +28,7 @@ interface BannerItem {
   _id: string;
   title: string;
   imageUrl: string;
+  mobileImageUrl?: string;
   linkUrl?: string;
   isActive: boolean;
   displayOrder: number;
@@ -47,16 +50,26 @@ export default function AdminHeroBannersPage() {
   const [linkUrl, setLinkUrl] = useState('');
   const [displayOrder, setDisplayOrder] = useState<number>(0);
   const [isActive, setIsActive] = useState(true);
+
+  // Desktop Image state
   const [useUrlInput, setUseUrlInput] = useState(false);
   const [imageUrlInput, setImageUrlInput] = useState('');
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string>('');
+
+  // Mobile Image state (separate & optional)
+  const [useMobileUrlInput, setUseMobileUrlInput] = useState(false);
+  const [mobileImageUrlInput, setMobileImageUrlInput] = useState('');
+  const [selectedMobileFile, setSelectedMobileFile] = useState<File | null>(null);
+  const [mobileFilePreview, setMobileFilePreview] = useState<string>('');
+  const [removeMobileImage, setRemoveMobileImage] = useState(false);
 
   // Notifications
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const mobileFileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchBanners = async () => {
     try {
@@ -105,14 +118,14 @@ export default function AdminHeroBannersPage() {
 
     // Validate size (5MB)
     if (file.size > 5 * 1024 * 1024) {
-      setErrorMessage('Selected file exceeds the 5 MB limit');
+      setErrorMessage('Desktop file exceeds the 5 MB limit');
       return;
     }
 
     // Validate type
     const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
     if (!validTypes.includes(file.type.toLowerCase())) {
-      setErrorMessage('Invalid file type. Please upload a JPG, PNG, or WebP image.');
+      setErrorMessage('Invalid desktop file type. Please upload a JPG, PNG, or WebP image.');
       return;
     }
 
@@ -127,11 +140,49 @@ export default function AdminHeroBannersPage() {
     setFilePreview(previewUrl);
   };
 
+  const handleMobileFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setErrorMessage('Mobile image file exceeds the 5 MB limit');
+      return;
+    }
+
+    const validTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'];
+    if (!validTypes.includes(file.type.toLowerCase())) {
+      setErrorMessage('Invalid mobile file type. Please upload a JPG, PNG, or WebP image.');
+      return;
+    }
+
+    setErrorMessage(null);
+    setSelectedMobileFile(file);
+    setRemoveMobileImage(false);
+
+    if (mobileFilePreview && mobileFilePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(mobileFilePreview);
+    }
+    const previewUrl = URL.createObjectURL(file);
+    setMobileFilePreview(previewUrl);
+  };
+
+  const handleRemoveMobileImage = () => {
+    setSelectedMobileFile(null);
+    if (mobileFilePreview && mobileFilePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(mobileFilePreview);
+    }
+    setMobileFilePreview('');
+    setMobileImageUrlInput('');
+    setRemoveMobileImage(true);
+    if (mobileFileInputRef.current) mobileFileInputRef.current.value = '';
+  };
+
   const handleResetForm = () => {
     setTitle('');
     setLinkUrl('');
     setDisplayOrder(0);
     setIsActive(true);
+
     setSelectedFile(null);
     if (filePreview && filePreview.startsWith('blob:')) {
       URL.revokeObjectURL(filePreview);
@@ -139,8 +190,19 @@ export default function AdminHeroBannersPage() {
     setFilePreview('');
     setImageUrlInput('');
     setUseUrlInput(false);
+
+    setSelectedMobileFile(null);
+    if (mobileFilePreview && mobileFilePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(mobileFilePreview);
+    }
+    setMobileFilePreview('');
+    setMobileImageUrlInput('');
+    setUseMobileUrlInput(false);
+    setRemoveMobileImage(false);
+
     setEditingBanner(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
+    if (mobileFileInputRef.current) mobileFileInputRef.current.value = '';
     setIsFormOpen(false);
   };
 
@@ -152,6 +214,7 @@ export default function AdminHeroBannersPage() {
     setLinkUrl(banner.linkUrl || '');
     setDisplayOrder(banner.displayOrder || 0);
     setIsActive(banner.isActive);
+
     setSelectedFile(null);
     if (filePreview && filePreview.startsWith('blob:')) {
       URL.revokeObjectURL(filePreview);
@@ -160,6 +223,18 @@ export default function AdminHeroBannersPage() {
     setUseUrlInput(!isLocalOrBlob);
     setImageUrlInput(banner.imageUrl || '');
     setFilePreview(banner.imageUrl || '');
+
+    setSelectedMobileFile(null);
+    if (mobileFilePreview && mobileFilePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(mobileFilePreview);
+    }
+    const hasMobile = Boolean(banner.mobileImageUrl && banner.mobileImageUrl.trim() !== '');
+    const isMobileLocalOrBlob = banner.mobileImageUrl?.startsWith('/uploads/');
+    setUseMobileUrlInput(hasMobile && !isMobileLocalOrBlob);
+    setMobileImageUrlInput(banner.mobileImageUrl || '');
+    setMobileFilePreview(banner.mobileImageUrl || '');
+    setRemoveMobileImage(false);
+
     setIsFormOpen(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -176,12 +251,12 @@ export default function AdminHeroBannersPage() {
 
     if (!editingBanner) {
       if (!useUrlInput && !selectedFile) {
-        setErrorMessage('Please select an image file to upload.');
+        setErrorMessage('Please select a desktop image file to upload.');
         return;
       }
 
       if (useUrlInput && !imageUrlInput.trim()) {
-        setErrorMessage('Please enter an image URL.');
+        setErrorMessage('Please enter a desktop image URL.');
         return;
       }
     }
@@ -196,13 +271,29 @@ export default function AdminHeroBannersPage() {
 
       let res: Response;
 
-      if (!useUrlInput && selectedFile) {
+      // If either desktop or mobile file was selected, use FormData
+      if (selectedFile || selectedMobileFile) {
         const formData = new FormData();
         formData.append('title', title.trim());
         formData.append('linkUrl', linkUrl.trim());
         formData.append('displayOrder', String(displayOrder));
         formData.append('isActive', String(isActive));
-        formData.append('file', selectedFile);
+
+        if (selectedFile) {
+          formData.append('file', selectedFile);
+        } else if (useUrlInput && imageUrlInput.trim()) {
+          formData.append('imageUrl', imageUrlInput.trim());
+        }
+
+        if (selectedMobileFile) {
+          formData.append('mobileFile', selectedMobileFile);
+        } else if (useMobileUrlInput && mobileImageUrlInput.trim()) {
+          formData.append('mobileImageUrl', mobileImageUrlInput.trim());
+        }
+
+        if (removeMobileImage) {
+          formData.append('removeMobileImage', 'true');
+        }
 
         res = await fetch(url, {
           method,
@@ -215,8 +306,17 @@ export default function AdminHeroBannersPage() {
           displayOrder,
           isActive,
         };
+
         if (useUrlInput && imageUrlInput.trim()) {
           payload.imageUrl = imageUrlInput.trim();
+        }
+
+        if (useMobileUrlInput && mobileImageUrlInput.trim()) {
+          payload.mobileImageUrl = mobileImageUrlInput.trim();
+        }
+
+        if (removeMobileImage) {
+          payload.removeMobileImage = true;
         }
 
         res = await fetch(url, {
@@ -418,110 +518,285 @@ export default function AdminHeroBannersPage() {
               </div>
             </div>
 
-            {/* Image Selection */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                  Banner Image {editingBanner ? '(Optional to replace)' : <span className="text-rose-500">*</span>}
-                </label>
-                <div className="flex items-center gap-2 text-xs">
-                  <button
-                    type="button"
-                    onClick={() => setUseUrlInput(false)}
-                    className={`px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer ${
-                      !useUrlInput
-                        ? 'bg-orange-100 text-orange-700 font-bold'
-                        : 'text-slate-500 hover:text-slate-800'
-                    }`}
-                  >
-                    File Upload
-                  </button>
-                  <span className="text-slate-300">|</span>
-                  <button
-                    type="button"
-                    onClick={() => setUseUrlInput(true)}
-                    className={`px-2.5 py-1 rounded-lg font-medium transition-colors cursor-pointer ${
-                      useUrlInput
-                        ? 'bg-orange-100 text-orange-700 font-bold'
-                        : 'text-slate-500 hover:text-slate-800'
-                    }`}
-                  >
-                    External Image URL
-                  </button>
-                </div>
-              </div>
-
-              {!useUrlInput ? (
-                <div className="space-y-3">
-                  <div
-                    onClick={() => fileInputRef.current?.click()}
-                    className="border-2 border-dashed border-slate-300 hover:border-orange-500 bg-slate-50/60 hover:bg-orange-50/30 rounded-2xl p-6 text-center cursor-pointer transition-colors"
-                  >
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
-                      onChange={handleFileChange}
-                      className="hidden"
-                    />
-                    <div className="flex flex-col items-center gap-2">
-                      <div className="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center">
-                        <UploadCloud size={20} />
-                      </div>
-                      <div className="text-xs font-bold text-slate-800">
-                        {selectedFile
-                          ? selectedFile.name
-                          : editingBanner
-                          ? 'Click to select a replacement banner image file'
-                          : 'Click to upload banner image file'}
-                      </div>
-                      <div className="text-[11px] text-slate-400">
-                        Supports WebP, PNG, JPG/JPEG (Max 5 MB)
-                      </div>
+            {/* Image Selection: Separate Desktop and Mobile Banner Configuration */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2 border-t border-slate-100">
+              {/* DESKTOP BANNER CARD */}
+              <div className="bg-slate-50/70 border border-slate-200 rounded-2xl p-5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center">
+                      <Monitor size={15} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+                        Desktop Banner Image {editingBanner ? '(Optional to replace)' : <span className="text-rose-500">*</span>}
+                      </label>
+                      <span className="text-[11px] text-slate-500">
+                        Recommended: ~2000 × 800 px (16:9 or 21:9 landscape)
+                      </span>
                     </div>
                   </div>
 
-                  {filePreview && (
-                    <div className="relative w-full h-44 rounded-xl overflow-hidden border border-slate-200 shadow-2xs bg-slate-900">
-                      <Image
-                        src={filePreview}
-                        alt="Banner Preview"
-                        fill
-                        unoptimized
-                        className="object-contain"
+                  <div className="flex items-center gap-1.5 text-[11px]">
+                    <button
+                      type="button"
+                      onClick={() => setUseUrlInput(false)}
+                      className={`px-2 py-0.5 rounded-md font-semibold transition-colors cursor-pointer ${
+                        !useUrlInput
+                          ? 'bg-orange-600 text-white'
+                          : 'bg-white border border-slate-200 text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      File
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setUseUrlInput(true)}
+                      className={`px-2 py-0.5 rounded-md font-semibold transition-colors cursor-pointer ${
+                        useUrlInput
+                          ? 'bg-orange-600 text-white'
+                          : 'bg-white border border-slate-200 text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      URL
+                    </button>
+                  </div>
+                </div>
+
+                {!useUrlInput ? (
+                  <div className="space-y-3">
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="border-2 border-dashed border-slate-300 hover:border-orange-500 bg-white hover:bg-orange-50/20 rounded-xl p-5 text-center cursor-pointer transition-colors"
+                    >
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                        onChange={handleFileChange}
+                        className="hidden"
                       />
-                      <div className="absolute bottom-2 left-2 px-2.5 py-1 bg-slate-900/80 text-white text-[11px] font-medium rounded-md backdrop-blur-xs">
-                        {selectedFile ? 'New Selected Image Preview' : 'Current Banner Image'}
+                      <div className="flex flex-col items-center gap-1.5">
+                        <UploadCloud size={20} className="text-orange-600" />
+                        <div className="text-xs font-bold text-slate-800 truncate max-w-xs">
+                          {selectedFile
+                            ? selectedFile.name
+                            : editingBanner
+                            ? 'Click to replace desktop image file'
+                            : 'Click to upload desktop image file'}
+                        </div>
+                        <div className="text-[10px] text-slate-400">
+                          WebP, PNG, JPG up to 5 MB
+                        </div>
                       </div>
                     </div>
-                  )}
+
+                    {filePreview && (
+                      <div className="relative w-full h-36 rounded-xl overflow-hidden border border-slate-200 shadow-2xs bg-slate-950">
+                        <Image
+                          src={filePreview}
+                          alt="Desktop Banner Preview"
+                          fill
+                          unoptimized
+                          className="object-contain"
+                        />
+                        <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-slate-900/85 text-white text-[10px] font-bold rounded-md backdrop-blur-xs flex items-center gap-1">
+                          <Monitor size={10} />
+                          <span>{selectedFile ? 'New Desktop Image' : 'Current Desktop Image'}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <input
+                      type="url"
+                      value={imageUrlInput}
+                      onChange={(e) => setImageUrlInput(e.target.value)}
+                      placeholder="https://images.unsplash.com/... or https://..."
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    />
+                    {imageUrlInput && (
+                      <div className="relative w-full h-36 rounded-xl overflow-hidden border border-slate-200 shadow-2xs bg-slate-950">
+                        <Image
+                          src={imageUrlInput}
+                          alt="Desktop URL Preview"
+                          fill
+                          unoptimized
+                          className="object-contain"
+                          onError={() => setErrorMessage('Failed to load desktop image preview from this URL')}
+                        />
+                        <div className="absolute bottom-2 left-2 px-2 py-0.5 bg-slate-900/85 text-white text-[10px] font-bold rounded-md backdrop-blur-xs flex items-center gap-1">
+                          <Monitor size={10} />
+                          <span>Desktop Preview (URL)</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* MOBILE BANNER CARD (OPTIONAL) */}
+              <div className="bg-slate-50/70 border border-slate-200 rounded-2xl p-5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center">
+                      <Smartphone size={15} />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+                          Mobile Banner Image
+                        </label>
+                        <span className="text-[10px] font-bold px-1.5 py-0.2 bg-slate-200 text-slate-600 rounded">
+                          Optional
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-slate-500">
+                        Recommended: ~750 × 1000 px (Portrait 3:4 ratio)
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 text-[11px]">
+                    <button
+                      type="button"
+                      onClick={() => setUseMobileUrlInput(false)}
+                      className={`px-2 py-0.5 rounded-md font-semibold transition-colors cursor-pointer ${
+                        !useMobileUrlInput
+                          ? 'bg-orange-600 text-white'
+                          : 'bg-white border border-slate-200 text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      File
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setUseMobileUrlInput(true)}
+                      className={`px-2 py-0.5 rounded-md font-semibold transition-colors cursor-pointer ${
+                        useMobileUrlInput
+                          ? 'bg-orange-600 text-white'
+                          : 'bg-white border border-slate-200 text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      URL
+                    </button>
+                  </div>
                 </div>
-              ) : (
-                <div className="space-y-3">
-                  <input
-                    type="url"
-                    value={imageUrlInput}
-                    onChange={(e) => setImageUrlInput(e.target.value)}
-                    placeholder="https://images.unsplash.com/... or https://..."
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                  />
-                  {imageUrlInput && (
-                    <div className="relative w-full h-44 rounded-xl overflow-hidden border border-slate-200 shadow-2xs bg-slate-900">
-                      <Image
-                        src={imageUrlInput}
-                        alt="URL Preview"
-                        fill
-                        unoptimized
-                        className="object-contain"
-                        onError={() => setErrorMessage('Failed to load image preview from this URL')}
+
+                <p className="text-[11px] text-slate-500 leading-normal">
+                  If no mobile image is provided, mobile screens will automatically fall back to the desktop banner image.
+                </p>
+
+                {!useMobileUrlInput ? (
+                  <div className="space-y-3">
+                    <div
+                      onClick={() => mobileFileInputRef.current?.click()}
+                      className="border-2 border-dashed border-slate-300 hover:border-orange-500 bg-white hover:bg-orange-50/20 rounded-xl p-5 text-center cursor-pointer transition-colors"
+                    >
+                      <input
+                        ref={mobileFileInputRef}
+                        type="file"
+                        accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                        onChange={handleMobileFileChange}
+                        className="hidden"
                       />
-                      <div className="absolute bottom-2 left-2 px-2.5 py-1 bg-slate-900/80 text-white text-[11px] font-medium rounded-md backdrop-blur-xs">
-                        Image Preview (URL)
+                      <div className="flex flex-col items-center gap-1.5">
+                        <UploadCloud size={20} className="text-orange-600" />
+                        <div className="text-xs font-bold text-slate-800 truncate max-w-xs">
+                          {selectedMobileFile
+                            ? selectedMobileFile.name
+                            : mobileFilePreview && !removeMobileImage
+                            ? 'Click to replace mobile image file'
+                            : 'Click to upload portrait mobile banner'}
+                        </div>
+                        <div className="text-[10px] text-slate-400">
+                          WebP, PNG, JPG up to 5 MB
+                        </div>
                       </div>
                     </div>
-                  )}
-                </div>
-              )}
+
+                    {mobileFilePreview && !removeMobileImage && (
+                      <div className="flex items-center gap-4 p-3 bg-white border border-slate-200 rounded-xl">
+                        {/* Portrait Preview Frame */}
+                        <div className="relative w-20 h-28 rounded-lg overflow-hidden border border-slate-200 shadow-2xs bg-slate-950 shrink-0">
+                          <Image
+                            src={mobileFilePreview}
+                            alt="Mobile Banner Preview"
+                            fill
+                            unoptimized
+                            className="object-contain"
+                          />
+                        </div>
+
+                        <div className="flex-1 space-y-1.5">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xs font-bold text-slate-800">
+                              {selectedMobileFile ? 'Selected for Mobile' : 'Active Mobile Banner'}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 truncate max-w-xs">
+                            {selectedMobileFile ? selectedMobileFile.name : mobileFilePreview}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={handleRemoveMobileImage}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-lg border border-rose-200 transition-colors cursor-pointer"
+                          >
+                            <Trash2 size={11} />
+                            <span>Remove Mobile Image (Use Desktop Fallback)</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <input
+                      type="url"
+                      value={mobileImageUrlInput}
+                      onChange={(e) => {
+                        setMobileImageUrlInput(e.target.value);
+                        setRemoveMobileImage(false);
+                      }}
+                      placeholder="https://images.unsplash.com/... (portrait mobile)"
+                      className="w-full px-3.5 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    />
+
+                    {mobileImageUrlInput && !removeMobileImage && (
+                      <div className="flex items-center gap-4 p-3 bg-white border border-slate-200 rounded-xl">
+                        <div className="relative w-20 h-28 rounded-lg overflow-hidden border border-slate-200 shadow-2xs bg-slate-950 shrink-0">
+                          <Image
+                            src={mobileImageUrlInput}
+                            alt="Mobile URL Preview"
+                            fill
+                            unoptimized
+                            className="object-contain"
+                            onError={() => setErrorMessage('Failed to load mobile image preview from this URL')}
+                          />
+                        </div>
+
+                        <div className="flex-1 space-y-1.5">
+                          <span className="text-xs font-bold text-slate-800">
+                            Mobile Banner Preview (URL)
+                          </span>
+                          <p className="text-[11px] text-slate-500 truncate max-w-xs">
+                            {mobileImageUrlInput}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={handleRemoveMobileImage}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-lg border border-rose-200 transition-colors cursor-pointer"
+                          >
+                            <Trash2 size={11} />
+                            <span>Remove Mobile URL</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Display Order & Active Toggle */}
@@ -643,15 +918,48 @@ export default function AdminHeroBannersPage() {
                 >
                   {/* Left: Thumbnail & Details */}
                   <div className="flex items-start sm:items-center gap-4 min-w-0">
-                    {/* Thumbnail Preview */}
-                    <div className="relative w-28 h-18 sm:w-36 sm:h-20 rounded-xl overflow-hidden border border-slate-200 shrink-0 bg-slate-900 shadow-2xs">
-                      <Image
-                        src={banner.imageUrl}
-                        alt={banner.title}
-                        fill
-                        unoptimized
-                        className="object-contain"
-                      />
+                    {/* Dual Thumbnail Preview: Desktop + Mobile */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      {/* Desktop Thumbnail */}
+                      <div className="relative w-28 h-18 sm:w-36 sm:h-20 rounded-xl overflow-hidden border border-slate-200 bg-slate-950 shadow-2xs">
+                        <Image
+                          src={banner.imageUrl}
+                          alt={`${banner.title} (Desktop)`}
+                          fill
+                          unoptimized
+                          className="object-contain"
+                        />
+                        <div className="absolute top-1 left-1 px-1.5 py-0.5 bg-slate-900/85 text-[9px] font-bold text-white rounded flex items-center gap-1">
+                          <Monitor size={9} />
+                          <span>Desktop</span>
+                        </div>
+                      </div>
+
+                      {/* Mobile Thumbnail or Fallback Indicator */}
+                      <div className="relative w-14 h-18 sm:w-16 sm:h-20 rounded-xl overflow-hidden border border-slate-200 bg-slate-950 shadow-2xs flex items-center justify-center">
+                        {banner.mobileImageUrl ? (
+                          <>
+                            <Image
+                              src={banner.mobileImageUrl}
+                              alt={`${banner.title} (Mobile)`}
+                              fill
+                              unoptimized
+                              className="object-contain"
+                            />
+                            <div className="absolute top-1 left-1 px-1 py-0.5 bg-orange-600/90 text-[8px] font-bold text-white rounded flex items-center gap-0.5">
+                              <Smartphone size={8} />
+                              <span>Mobile</span>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="p-1 text-center flex flex-col items-center justify-center gap-0.5 text-slate-400">
+                            <Smartphone size={12} className="text-slate-500" />
+                            <span className="text-[8px] font-bold uppercase tracking-tight text-slate-400 text-center leading-none">
+                              Fallback
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     {/* Meta */}
@@ -679,6 +987,18 @@ export default function AdminHeroBannersPage() {
                             </>
                           )}
                         </span>
+
+                        {banner.mobileImageUrl ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 bg-orange-50 text-orange-700 border border-orange-200 rounded-full">
+                            <Smartphone size={10} />
+                            <span>Mobile Image Configured</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 bg-slate-100 text-slate-500 rounded-full">
+                            <Monitor size={10} />
+                            <span>Mobile: Desktop Fallback</span>
+                          </span>
+                        )}
                       </div>
 
                       {banner.linkUrl ? (

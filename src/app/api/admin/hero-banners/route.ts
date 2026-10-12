@@ -54,6 +54,7 @@ export async function POST(req: NextRequest) {
     let title = '';
     let linkUrl = '';
     let imageUrl = '';
+    let mobileImageUrl = '';
     let isActive = true;
     let displayOrder = 0;
 
@@ -80,11 +81,25 @@ export async function POST(req: NextRequest) {
       } else {
         imageUrl = (formData.get('imageUrl') as string || '').trim();
       }
+
+      // Handle optional separate mobile banner image
+      const mobileFile = formData.get('mobileFile') ?? formData.get('mobileImage');
+      if (mobileFile && typeof mobileFile !== 'string' && mobileFile.size > 0) {
+        const mobileFileObj = mobileFile as File;
+        const mobileValidation = validateBannerImageFile(mobileFileObj);
+        if (!mobileValidation.valid) {
+          return errorResponse(mobileValidation.error || 'Invalid mobile banner image file', 400);
+        }
+        mobileImageUrl = await saveUploadedBannerFile(mobileFileObj);
+      } else {
+        mobileImageUrl = (formData.get('mobileImageUrl') as string || '').trim();
+      }
     } else {
       const body = await req.json();
       title = (body.title || '').trim();
       linkUrl = (body.linkUrl || '').trim();
       imageUrl = (body.imageUrl || '').trim();
+      mobileImageUrl = (body.mobileImageUrl || '').trim();
       displayOrder = typeof body.displayOrder === 'number' ? body.displayOrder : 0;
       if (typeof body.isActive === 'boolean') {
         isActive = body.isActive;
@@ -112,6 +127,7 @@ export async function POST(req: NextRequest) {
     const newBanner = await HeroBanner.create({
       title,
       imageUrl,
+      mobileImageUrl: mobileImageUrl || '',
       linkUrl,
       isActive,
       displayOrder,

@@ -116,7 +116,7 @@ export const HeroBackgroundCarousel: React.FC<HeroBackgroundCarouselProps> = ({ 
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-full overflow-hidden select-none bg-slate-950"
+      className="relative w-full h-full overflow-hidden select-none bg-slate-900"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       aria-label="Promotional hero banner carousel"
@@ -125,26 +125,43 @@ export const HeroBackgroundCarousel: React.FC<HeroBackgroundCarouselProps> = ({ 
       {validBanners.map((banner, index) => {
         const isActive = index === currentIndex;
         const bannerKey = banner._id || banner.id || `banner-${index}`;
+        const activeImageUrl = banner.mobileImageUrl || banner.imageUrl;
 
         return (
           <div
             key={bannerKey}
-            className={`absolute inset-0 transition-opacity duration-700 ease-in-out flex items-center justify-center ${
+            className={`absolute inset-0 transition-opacity duration-700 ease-in-out flex items-center justify-center overflow-hidden ${
               isActive ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none z-0'
             }`}
             aria-hidden={!isActive}
           >
-            <Image
-              src={banner.imageUrl}
-              alt={banner.title || 'OnlineSaleLive Featured Offer'}
-              fill
-              priority={index === 0}
-              loading={index === 0 ? 'eager' : 'lazy'}
-              sizes="100vw"
-              unoptimized
-              className="hero-banner-image select-none transition-all duration-300"
-              onError={() => handleImageError(bannerKey)}
+            {/* Subtle ambient blur background fill to eliminate stark dark letterboxing */}
+            <div
+              className="absolute inset-0 bg-cover bg-center filter blur-3xl opacity-25 scale-110 pointer-events-none transition-all duration-700"
+              style={{
+                backgroundImage: `url(${activeImageUrl})`,
+              }}
+              aria-hidden="true"
             />
+
+            {/* Responsive Banner Picture: switches natively between mobile & desktop image */}
+            <picture className="relative w-full h-full flex items-center justify-center z-10">
+              {banner.mobileImageUrl && (
+                <source
+                  media="(max-width: 767px)"
+                  srcSet={banner.mobileImageUrl}
+                />
+              )}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={banner.imageUrl}
+                alt={banner.title || 'OnlineSaleLive Featured Offer'}
+                loading={index === 0 ? 'eager' : 'lazy'}
+                decoding="async"
+                className="hero-banner-image select-none transition-all duration-300 w-full h-full"
+                onError={() => handleImageError(bannerKey)}
+              />
+            </picture>
           </div>
         );
       })}

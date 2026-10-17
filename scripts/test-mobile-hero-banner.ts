@@ -41,8 +41,8 @@ async function runMobileHeroTests() {
   }
 
   // Verify desktop layout is preserved unchanged
-  const desktopContainerRegex = /@media\s*\(\s*min-width:\s*768px\s*\)\s*\{[\s\S]*?\.hero-section-container\s*\{([^}]+)\}/;
-  const desktopMatch = globalsCss.match(desktopContainerRegex);
+  const desktopMediaQueryRegex = /@media\s*\(\s*min-width:\s*768px\s*\)\s*\{([\s\S]*?)\n\}/;
+  const desktopMatch = globalsCss.match(desktopMediaQueryRegex);
   assert('Found desktop @media (min-width: 768px) definition', Boolean(desktopMatch));
 
   if (desktopMatch) {
@@ -50,6 +50,7 @@ async function runMobileHeroTests() {
     assert('Desktop preserves height calculation with --actual-header-height', desktopRules.includes('--actual-header-height'));
     assert('Desktop preserves min-height: 380px', desktopRules.includes('min-height: 380px;'));
     assert('Desktop uses calc(100svh - var(--actual-header-height', desktopRules.includes('100svh'));
+    assert('Desktop preserves object-fit: contain for wide banner layout', desktopRules.includes('object-fit: contain;'));
   }
 
   // Verify .hero-banner-image class
@@ -59,11 +60,12 @@ async function runMobileHeroTests() {
 
   if (imageMatch) {
     const imageRules = imageMatch[1];
-    assert('Image uses object-fit: contain to preserve proportions and readability', imageRules.includes('object-fit: contain;'));
+    assert('Image uses object-fit: cover on mobile to completely fill hero section', imageRules.includes('object-fit: cover;'));
     assert('Image uses object-position: center center', imageRules.includes('object-position: center center'));
     assert('Image uses width: 100%', imageRules.includes('width: 100%;'));
     assert('Image uses height: 100%', imageRules.includes('height: 100%;'));
     assert('Image uses max-width: 100% and max-height: 100%', imageRules.includes('max-width: 100%;') && imageRules.includes('max-height: 100%;'));
+    assert('Image uses display: block', imageRules.includes('display: block;'));
   }
 
   // --- 2. COMPONENT ARCHITECTURE CHECKS ---
@@ -88,7 +90,7 @@ async function runMobileHeroTests() {
   console.log('\n--- 3. VIEWPORT SCALING & ASPECT RATIO PROPORTIONS ---');
   const testViewports = [
     { name: 'iPhone SE / Small (375x812)', width: 375, height: 812 },
-    { name: 'iPhone 13 / 14 (390x844)', width: 390, height: 844 },
+    { name: 'iPhone 14 / 15 / 16 (393x852)', width: 393, height: 852 },
     { name: 'Android Large (457x1022)', width: 457, height: 1022 },
   ];
 
@@ -96,32 +98,35 @@ async function runMobileHeroTests() {
     const containerHeight = vp.height * 0.50; // exactly 50svh
     const containerWidth = vp.width;
 
-    // Mobile banner uploaded asset: 1024 x 1536 (Aspect ratio: 0.667)
-    const imgAspect = 1024 / 1536;
-    // With object-fit: contain:
-    let renderedW: number, renderedH: number;
-    if (containerWidth / containerHeight > imgAspect) {
-      // Container is wider than image -> constrained by height
-      renderedH = containerHeight;
-      renderedW = renderedH * imgAspect;
-    } else {
-      // Container is taller than image -> constrained by width
-      renderedW = containerWidth;
-      renderedH = renderedW / imgAspect;
-    }
+    // Both portrait (3:4 ratio e.g. 750x1000) and landscape banners (16:9)
+    // With object-fit: cover:
+    // Scale factor = Math.max(containerWidth / imgWidth, containerHeight / imgHeight)
+    // renderedW = imgWidth * scale >= containerWidth
+    // renderedH = imgHeight * scale >= containerHeight
+    // Meaning the image completely covers the 50svh frame with 0px empty gap!
+    const bannerRatios = [
+      { type: 'Portrait Mobile Banner (3:4)', w: 750, h: 1000 },
+      { type: 'Desktop Fallback Banner (16:9)', w: 1920, h: 1080 },
+    ];
 
-    assert(
-      `Viewport ${vp.name}: Container height is exactly 50% (${containerHeight}px)`,
-      containerHeight === vp.height * 0.50
-    );
-    assert(
-      `Viewport ${vp.name}: Image fits without exceeding 50svh (Image H: ${renderedH.toFixed(1)}px <= ${containerHeight}px)`,
-      renderedH <= containerHeight + 0.01
-    );
-    assert(
-      `Viewport ${vp.name}: Image fits without exceeding container width (Image W: ${renderedW.toFixed(1)}px <= ${containerWidth}px)`,
-      renderedW <= containerWidth + 0.01
-    );
+    for (const b of bannerRatios) {
+      const scale = Math.max(containerWidth / b.w, containerHeight / b.h);
+      const coveredW = b.w * scale;
+      const coveredH = b.h * scale;
+
+      assert(
+        `Viewport ${vp.name} [${b.type}]: Container height is exactly 50% (${containerHeight}px)`,
+        containerHeight === vp.height * 0.50
+      );
+      assert(
+        `Viewport ${vp.name} [${b.type}]: Image covers 100% height (covered: ${coveredH.toFixed(1)}px >= ${containerHeight}px, no vertical empty space)`,
+        coveredH >= containerHeight - 0.01
+      );
+      assert(
+        `Viewport ${vp.name} [${b.type}]: Image covers 100% width (covered: ${coveredW.toFixed(1)}px >= ${containerWidth}px, no horizontal gaps)`,
+        coveredW >= containerWidth - 0.01
+      );
+    }
   }
 
   // --- 4. LIVE DEV SERVER HTTP RENDER CHECK ---

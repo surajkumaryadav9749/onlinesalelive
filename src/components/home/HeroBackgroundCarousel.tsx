@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import { HeroBanner } from '@/types';
 
@@ -159,14 +158,13 @@ export const HeroBackgroundCarousel: React.FC<HeroBackgroundCarouselProps> = ({ 
             )}
 
             {/* Responsive Banner Picture: switches natively between mobile & desktop image */}
-            <picture className="relative w-full h-full flex items-center justify-center z-10">
+            <picture className="relative block w-full h-full z-10">
               {banner.mobileImageUrl && (
                 <source
                   media="(max-width: 767px)"
                   srcSet={banner.mobileImageUrl}
                 />
               )}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={banner.imageUrl}
                 alt={banner.title || 'OnlineSaleLive Featured Offer'}

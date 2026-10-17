@@ -27,7 +27,6 @@ import { GuideCard } from '@/components/guides/GuideCard';
 import { ReviewCard } from '@/components/reviews/ReviewCard';
 import { ComparisonCard } from '@/components/compare/ComparisonCard';
 import {
-  Zap,
   ArrowRight,
   ShoppingBag,
 } from 'lucide-react';

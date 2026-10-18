@@ -3,14 +3,14 @@ import { Product, Guide, Review, BlogPost, Category, ComparisonItem } from '@/ty
 
 /**
  * Returns the configured base URL for the site.
- * Defaults to 'https://onlinesalelive.in' in production.
+ * Defaults to 'https://www.onlinesalelive.in' in production (matching Vercel primary domain).
  */
 export function getBaseUrl(): string {
   const envUrl = process.env.NEXT_PUBLIC_SITE_URL;
   if (envUrl && envUrl.trim() !== '') {
     return envUrl.trim().replace(/\/+$/, '');
   }
-  return 'https://onlinesalelive.in';
+  return 'https://www.onlinesalelive.in';
 }
 
 /**

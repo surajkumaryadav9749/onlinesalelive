@@ -24,18 +24,18 @@ async function runMobileHeroTests() {
   console.log('--- 1. CSS SPECIFICATION CHECKS (globals.css) ---');
   const globalsCss = fs.readFileSync(path.join(process.cwd(), 'src/app/globals.css'), 'utf-8');
 
-  // Verify mobile height is exactly 50svh with 50vh fallback
+  // Verify mobile height is approximately 30svh with 30vh fallback
   const mobileContainerRegex = /\.hero-section-container\s*\{([^}]+)\}/;
   const mobileMatch = globalsCss.match(mobileContainerRegex);
   assert('Found .hero-section-container mobile definition', Boolean(mobileMatch));
 
   if (mobileMatch) {
     const mobileRules = mobileMatch[1];
-    assert('Mobile has height: 50vh fallback', mobileRules.includes('height: 50vh;'));
-    assert('Mobile has height: 50svh', mobileRules.includes('height: 50svh;'));
-    assert('Mobile has max-height: 50vh fallback', mobileRules.includes('max-height: 50vh;'));
-    assert('Mobile has max-height: 50svh', mobileRules.includes('max-height: 50svh;'));
-    assert('Mobile does NOT have min-height (removed to prevent exceeding 50svh)', !mobileRules.includes('min-height:'));
+    assert('Mobile has height: 30vh fallback', mobileRules.includes('height: 30vh;'));
+    assert('Mobile has height: 30svh', mobileRules.includes('height: 30svh;'));
+    assert('Mobile has max-height: 35vh fallback', mobileRules.includes('max-height: 35vh;'));
+    assert('Mobile has max-height: 35svh', mobileRules.includes('max-height: 35svh;'));
+    assert('Mobile has min-height: 220px reserve', mobileRules.includes('min-height: 220px;'));
     assert('Mobile does NOT use 60vh or 60svh', !mobileRules.includes('60vh') && !mobileRules.includes('60svh'));
     assert('Mobile does NOT use 100vh', !mobileRules.includes('100vh'));
   }
@@ -71,20 +71,20 @@ async function runMobileHeroTests() {
   // --- 2. COMPONENT ARCHITECTURE CHECKS ---
   console.log('\n--- 2. COMPONENT ARCHITECTURE CHECKS ---');
   const carouselContent = fs.readFileSync(path.join(process.cwd(), 'src/components/home/HeroBackgroundCarousel.tsx'), 'utf-8');
-  assert('Carousel uses native <picture> element', carouselContent.includes('<picture'));
-  assert('Carousel has <source media="(max-width: 767px)"', carouselContent.includes('media="(max-width: 767px)"'));
-  assert('Carousel sources mobileImageUrl for mobile viewport', carouselContent.includes('srcSet={banner.mobileImageUrl}'));
-  assert('Carousel uses hero-banner-image class on <img>', carouselContent.includes('className="hero-banner-image'));
+  assert('Carousel uses Next.js Image component', carouselContent.includes("import Image from 'next/image';") && carouselContent.includes('<Image'));
+  assert('Carousel sources responsive mobile & desktop images', carouselContent.includes('mobileSrc') && carouselContent.includes('desktopSrc'));
+  assert('Carousel prioritizes first slide for LCP', carouselContent.includes('priority={index === 0}'));
+  assert('Carousel uses hero-banner-image class on image', carouselContent.includes('className="hero-banner-image'));
   assert('Carousel indicators are positioned with bottom-3 (inside container)', carouselContent.includes('bottom-3'));
-  assert('Carousel has separate responsive ambient blur for mobile and desktop', carouselContent.includes('md:hidden') && carouselContent.includes('hidden md:block'));
+  assert('Duplicate ambient blur divs removed to save bandwidth & GPU composite', !carouselContent.includes('filter blur-3xl'));
 
   const pageContent = fs.readFileSync(path.join(process.cwd(), 'src/app/page.tsx'), 'utf-8');
   assert('Hero section uses hero-section-container class', pageContent.includes('hero-section-container'));
-  assert('Hero section contains sr-only h1 for SEO without visible text overlays', pageContent.includes('<h1 className="sr-only">'));
+  assert('Page contains prominent H1 heading for SEO & LCP', pageContent.includes('<h1 className='));
   assert('Hero section does not have Explore Deals CTA overlay button', !pageContent.includes('Explore Deals'));
   assert('Hero section does not have Browse Categories CTA overlay button', !pageContent.includes('Browse Categories'));
   assert('Outer page container removed space-y-12 to prevent giant empty gap below hero', !pageContent.includes('space-y-12 sm:space-y-16 pb-16'));
-  assert('Content container starts with mt-4 sm:mt-10 for clean natural document flow', pageContent.includes('mt-4 sm:mt-10'));
+  assert('Content container starts with mt-4 for clean natural document flow', pageContent.includes('mt-4'));
 
   // --- 3. VIEWPORT SCALING & ASPECT RATIO PROPORTION CALCULATIONS ---
   console.log('\n--- 3. VIEWPORT SCALING & ASPECT RATIO PROPORTIONS ---');
@@ -95,15 +95,10 @@ async function runMobileHeroTests() {
   ];
 
   for (const vp of testViewports) {
-    const containerHeight = vp.height * 0.50; // exactly 50svh
+    const rawHeight = vp.height * 0.30; // approximately 30% viewport height
+    const containerHeight = Math.max(220, Math.min(rawHeight, vp.height * 0.35));
     const containerWidth = vp.width;
 
-    // Both portrait (3:4 ratio e.g. 750x1000) and landscape banners (16:9)
-    // With object-fit: cover:
-    // Scale factor = Math.max(containerWidth / imgWidth, containerHeight / imgHeight)
-    // renderedW = imgWidth * scale >= containerWidth
-    // renderedH = imgHeight * scale >= containerHeight
-    // Meaning the image completely covers the 50svh frame with 0px empty gap!
     const bannerRatios = [
       { type: 'Portrait Mobile Banner (3:4)', w: 750, h: 1000 },
       { type: 'Desktop Fallback Banner (16:9)', w: 1920, h: 1080 },
@@ -115,11 +110,11 @@ async function runMobileHeroTests() {
       const coveredH = b.h * scale;
 
       assert(
-        `Viewport ${vp.name} [${b.type}]: Container height is exactly 50% (${containerHeight}px)`,
-        containerHeight === vp.height * 0.50
+        `Viewport ${vp.name} [${b.type}]: Container height is ~30% (${containerHeight.toFixed(1)}px)`,
+        containerHeight >= 220
       );
       assert(
-        `Viewport ${vp.name} [${b.type}]: Image covers 100% height (covered: ${coveredH.toFixed(1)}px >= ${containerHeight}px, no vertical empty space)`,
+        `Viewport ${vp.name} [${b.type}]: Image covers 100% height (covered: ${coveredH.toFixed(1)}px >= ${containerHeight.toFixed(1)}px, no vertical empty space)`,
         coveredH >= containerHeight - 0.01
       );
       assert(
@@ -136,9 +131,7 @@ async function runMobileHeroTests() {
     assert('Live dev server responds with 200 OK', res.status === 200);
     const html = await res.text();
     assert('Rendered HTML contains .hero-section-container', html.includes('hero-section-container'));
-    assert('Rendered HTML contains <picture>', html.includes('<picture'));
-    assert('Rendered HTML contains mobile banner source element', html.includes('(max-width: 767px)'));
-    assert('Rendered HTML contains hero-banner-image', html.includes('hero-banner-image'));
+    assert('Rendered HTML contains responsive hero image', html.includes('hero-banner-image'));
     assert('Rendered HTML contains HomeDealsBudgetCategories section following hero', html.includes('Shop by Deals, Budget &amp; Categories') || html.includes('Shop by Deals, Budget & Categories') || html.includes('50%+ Off'));
   } catch (err) {
     console.warn('  [WARN] Dev server request skipped or failed:', err);

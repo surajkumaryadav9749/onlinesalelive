@@ -24,7 +24,7 @@ export const GuideCard: React.FC<GuideCardProps> = ({ guide }) => {
           className="object-cover group-hover:scale-105 transition-transform duration-300"
           onError={() => {
             setImgSrc(
-              `https://placehold.co/600x400/e2e8f0/0f172a?text=${encodeURIComponent(
+              `https://placehold.co/600x400/e2e8f0/0f172a.png?text=${encodeURIComponent(
                 guide.title.slice(0, 15)
               )}`
             );

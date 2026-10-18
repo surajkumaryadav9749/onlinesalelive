@@ -118,7 +118,7 @@ const ShelfContainer: React.FC<{
       <div
         ref={scrollRef}
         onScroll={checkScroll}
-        className="flex gap-3.5 sm:gap-4 overflow-x-auto pb-4 pt-1 px-1 scrollbar-none snap-x snap-mandatory scroll-smooth"
+        className="flex gap-3.5 sm:gap-4 overflow-x-auto pb-4 pt-1 px-1 scrollbar-none snap-x snap-mandatory"
         tabIndex={0}
         role="region"
         aria-label={ariaLabel}

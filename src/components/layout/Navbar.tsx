@@ -27,26 +27,20 @@ export const Navbar: React.FC = () => {
 
   React.useEffect(() => {
     const updateHeaderHeight = () => {
-      if (headerRef.current) {
+      if (typeof window !== 'undefined' && window.innerWidth >= 768 && headerRef.current) {
         const height = headerRef.current.offsetHeight;
-        document.documentElement.style.setProperty('--actual-header-height', `${height}px`);
+        if (height > 0) {
+          const current = document.documentElement.style.getPropertyValue('--actual-header-height');
+          if (current !== `${height}px`) {
+            document.documentElement.style.setProperty('--actual-header-height', `${height}px`);
+          }
+        }
       }
     };
-
-    updateHeaderHeight();
-
-    let resizeObserver: ResizeObserver | null = null;
-    if (typeof ResizeObserver !== 'undefined' && headerRef.current) {
-      resizeObserver = new ResizeObserver(() => {
-        updateHeaderHeight();
-      });
-      resizeObserver.observe(headerRef.current);
-    }
 
     window.addEventListener('resize', updateHeaderHeight);
 
     return () => {
-      if (resizeObserver) resizeObserver.disconnect();
       window.removeEventListener('resize', updateHeaderHeight);
     };
   }, []);

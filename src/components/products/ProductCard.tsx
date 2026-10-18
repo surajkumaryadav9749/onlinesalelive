@@ -15,7 +15,7 @@ interface ProductCardProps {
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product, priority = false }) => {
-  const defaultPlaceholder = `https://placehold.co/600x400/f1f5f9/475569?text=${encodeURIComponent(
+  const defaultPlaceholder = `https://placehold.co/600x400/f1f5f9/475569.png?text=${encodeURIComponent(
     (product.name || 'Product').slice(0, 18)
   )}`;
   const [imgSrc, setImgSrc] = useState(

@@ -225,7 +225,7 @@ export function getSafeProductImage(image?: string, name?: string): string {
     return image.trim();
   }
   const cleanName = (name || 'Product').trim().slice(0, 20);
-  return `https://placehold.co/600x400/f1f5f9/475569?text=${encodeURIComponent(cleanName || 'OnlineSaleLive')}`;
+  return `https://placehold.co/600x400/f1f5f9/475569.png?text=${encodeURIComponent(cleanName || 'OnlineSaleLive')}`;
 }
 
 // Mappers

@@ -98,7 +98,7 @@ export default async function ProductDetailPage({ params }: ProductPageProps) {
               src={
                 product.image && product.image.trim() !== ''
                   ? product.image
-                  : `https://placehold.co/600x400/f1f5f9/475569?text=${encodeURIComponent(
+                  : `https://placehold.co/600x400/f1f5f9/475569.png?text=${encodeURIComponent(
                       product.name.slice(0, 20)
                     )}`
               }

@@ -26,7 +26,7 @@ export const ComparisonCard: React.FC<ComparisonCardProps> = ({ comparison }) =>
           className="object-cover group-hover:scale-105 transition-transform duration-300"
           onError={() => {
             setImgSrc(
-              `https://placehold.co/600x400/e2e8f0/0f172a?text=${encodeURIComponent(
+              `https://placehold.co/600x400/e2e8f0/0f172a.png?text=${encodeURIComponent(
                 comparison.title.slice(0, 15)
               )}`
             );

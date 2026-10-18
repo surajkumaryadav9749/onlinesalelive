@@ -99,8 +99,8 @@ export const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <Link href="/category/mobiles" className="hover:text-white transition-colors">
-                  Mobiles
+                <Link href="/category/headphones" className="hover:text-white transition-colors">
+                  Headphones & Audio
                 </Link>
               </li>
               <li>
@@ -109,8 +109,8 @@ export const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <Link href="/category/fashion" className="hover:text-white transition-colors">
-                  Fashion & Apparel
+                <Link href="/category/clothing" className="hover:text-white transition-colors">
+                  Clothing & Fashion
                 </Link>
               </li>
               <li>
@@ -124,7 +124,7 @@ export const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <Link href="/category/home" className="hover:text-white transition-colors">
+                <Link href="/category/home-kitchen" className="hover:text-white transition-colors">
                   Home & Kitchen
                 </Link>
               </li>

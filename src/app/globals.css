@@ -54,14 +54,16 @@ body {
 }
 
 /* Responsive Homepage Hero Banner:
-   - On mobile: exactly 50% of visible viewport height (50svh with 50vh fallback)
+   - On mobile: approximately 30% of visible viewport height (30svh with 30vh fallback, min 220px, max 35svh)
    - On desktop/laptop: dynamically calculated to fit within first screen (100svh minus header)
-   - Image maintains aspect ratio, centered, never distorted or cropped */
+   - Mobile banner fills entire container with object-fit: cover, no letterboxing/gaps
+   - Desktop banner uses object-fit: contain to preserve desktop layout and wide banner proportions */
 .hero-section-container {
-  height: 50vh;
-  height: 50svh;
-  max-height: 50vh;
-  max-height: 50svh;
+  height: 30vh;
+  height: 30svh;
+  min-height: 220px;
+  max-height: 35vh;
+  max-height: 35svh;
   position: relative;
   width: 100%;
   overflow: hidden;

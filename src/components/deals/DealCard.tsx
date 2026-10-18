@@ -13,7 +13,7 @@ interface DealCardProps {
 }
 
 export const DealCard: React.FC<DealCardProps> = ({ deal }) => {
-  const defaultPlaceholder = `https://placehold.co/400x400/f1f5f9/475569?text=${encodeURIComponent(
+  const defaultPlaceholder = `https://placehold.co/400x400/f1f5f9/475569.png?text=${encodeURIComponent(
     (deal.product?.name || deal.title || 'Deal').slice(0, 15)
   )}`;
   const [imgSrc, setImgSrc] = useState(

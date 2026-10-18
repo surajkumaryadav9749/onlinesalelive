@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { HeroBanner } from '@/types';
 
 interface HeroBackgroundCarouselProps {
@@ -13,6 +14,7 @@ export const HeroBackgroundCarousel: React.FC<HeroBackgroundCarouselProps> = ({ 
   const [isPaused, setIsPaused] = useState(false);
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+  const [hasInteracted, setHasInteracted] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -25,27 +27,30 @@ export const HeroBackgroundCarousel: React.FC<HeroBackgroundCarouselProps> = ({ 
 
   const nextSlide = useCallback(() => {
     if (bannerCount <= 1) return;
+    setHasInteracted(true);
     setCurrentIndex((prev) => (prev + 1) % bannerCount);
   }, [bannerCount]);
 
   const prevSlide = useCallback(() => {
     if (bannerCount <= 1) return;
+    setHasInteracted(true);
     setCurrentIndex((prev) => (prev - 1 + bannerCount) % bannerCount);
   }, [bannerCount]);
 
   const goToSlide = (idx: number) => {
     if (idx >= 0 && idx < bannerCount) {
+      setHasInteracted(true);
       setCurrentIndex(idx);
     }
   };
 
-  // Auto-advance every 4.5 seconds when not paused and more than 1 banner
+  // Auto-advance every 6.5 seconds when not paused and more than 1 banner
   useEffect(() => {
     if (bannerCount <= 1 || isPaused) return;
 
     const timer = setInterval(() => {
       nextSlide();
-    }, 4500);
+    }, 6500);
 
     return () => clearInterval(timer);
   }, [bannerCount, isPaused, nextSlide]);
@@ -124,56 +129,64 @@ export const HeroBackgroundCarousel: React.FC<HeroBackgroundCarouselProps> = ({ 
       {validBanners.map((banner, index) => {
         const isActive = index === currentIndex;
         const bannerKey = banner._id || banner.id || `banner-${index}`;
-        const mobileBlurUrl = banner.mobileImageUrl || banner.imageUrl;
-        const desktopBlurUrl = banner.imageUrl;
+        const hasSeparateMobile =
+          Boolean(banner.mobileImageUrl) && banner.mobileImageUrl !== banner.imageUrl;
+        const mobileSrc = banner.mobileImageUrl || banner.imageUrl;
+        const desktopSrc = banner.imageUrl;
+
+        // On initial render before interaction, only render active slide (slide 0) to avoid duplicate DOM images
+        if (!hasInteracted && !isActive) {
+          return null;
+        }
 
         return (
           <div
             key={bannerKey}
-            className={`absolute inset-0 transition-opacity duration-700 ease-in-out flex items-center justify-center overflow-hidden ${
-              isActive ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none z-0'
-            }`}
+            className={`absolute inset-0 w-full h-full overflow-hidden ${
+              isActive ? 'opacity-100 z-10' : 'opacity-0 pointer-events-none z-0 hidden'
+            } ${hasInteracted ? 'transition-opacity duration-700 ease-in-out' : ''}`}
             aria-hidden={!isActive}
           >
-            {/* Subtle ambient blur background fill to eliminate stark dark letterboxing */}
-            {banner.mobileImageUrl ? (
+            {hasSeparateMobile ? (
               <>
-                <div
-                  className="md:hidden absolute inset-0 bg-cover bg-center filter blur-3xl opacity-30 scale-110 pointer-events-none transition-all duration-700"
-                  style={{ backgroundImage: `url(${mobileBlurUrl})` }}
-                  aria-hidden="true"
-                />
-                <div
-                  className="hidden md:block absolute inset-0 bg-cover bg-center filter blur-3xl opacity-25 scale-110 pointer-events-none transition-all duration-700"
-                  style={{ backgroundImage: `url(${desktopBlurUrl})` }}
-                  aria-hidden="true"
-                />
+                {/* Mobile Banner: visible below md (768px) */}
+                <div className="relative w-full h-full md:hidden">
+                  <Image
+                    src={mobileSrc}
+                    alt={banner.title || 'OnlineSaleLive Featured Offer'}
+                    fill
+                    priority={index === 0}
+                    sizes="100vw"
+                    className="hero-banner-image select-none"
+                    onError={() => handleImageError(bannerKey)}
+                  />
+                </div>
+
+                {/* Desktop Banner: visible on md and above */}
+                <div className="relative w-full h-full hidden md:block">
+                  <Image
+                    src={desktopSrc}
+                    alt={banner.title || 'OnlineSaleLive Featured Offer'}
+                    fill
+                    priority={index === 0}
+                    sizes="100vw"
+                    className="hero-banner-image select-none"
+                    onError={() => handleImageError(bannerKey)}
+                  />
+                </div>
               </>
             ) : (
-              <div
-                className="absolute inset-0 bg-cover bg-center filter blur-3xl opacity-25 scale-110 pointer-events-none transition-all duration-700"
-                style={{ backgroundImage: `url(${desktopBlurUrl})` }}
-                aria-hidden="true"
-              />
-            )}
-
-            {/* Responsive Banner Picture: switches natively between mobile & desktop image */}
-            <picture className="relative block w-full h-full z-10">
-              {banner.mobileImageUrl && (
-                <source
-                  media="(max-width: 767px)"
-                  srcSet={banner.mobileImageUrl}
-                />
-              )}
-              <img
-                src={banner.imageUrl}
+              /* Unified Banner: direct fill image inside absolute slide */
+              <Image
+                src={desktopSrc}
                 alt={banner.title || 'OnlineSaleLive Featured Offer'}
-                loading={index === 0 ? 'eager' : 'lazy'}
-                decoding="async"
-                className="hero-banner-image select-none transition-all duration-300 w-full h-full"
+                fill
+                priority={index === 0}
+                sizes="100vw"
+                className="hero-banner-image select-none"
                 onError={() => handleImageError(bannerKey)}
               />
-            </picture>
+            )}
           </div>
         );
       })}

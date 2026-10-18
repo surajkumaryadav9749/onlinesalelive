@@ -50,7 +50,7 @@ async function runMobileHeroTests() {
     assert('Desktop preserves height calculation with --actual-header-height', desktopRules.includes('--actual-header-height'));
     assert('Desktop preserves min-height: 380px', desktopRules.includes('min-height: 380px;'));
     assert('Desktop uses calc(100svh - var(--actual-header-height', desktopRules.includes('100svh'));
-    assert('Desktop preserves object-fit: contain for wide banner layout', desktopRules.includes('object-fit: contain;'));
+    assert('Desktop preserves object-fit: cover for full hero area fill', desktopRules.includes('object-fit: cover;'));
   }
 
   // Verify .hero-banner-image class

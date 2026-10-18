@@ -38,6 +38,7 @@ export const Navbar: React.FC = () => {
       }
     };
 
+    updateHeaderHeight();
     window.addEventListener('resize', updateHeaderHeight);
 
     return () => {

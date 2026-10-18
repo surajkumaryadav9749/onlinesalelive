@@ -83,15 +83,16 @@ body {
 
 @media (min-width: 768px) {
   .hero-section-container {
-    height: calc(100vh - var(--actual-header-height, 136px));
-    height: calc(100svh - var(--actual-header-height, 136px));
+    width: 100%;
+    height: clamp(380px, 34vw, 580px);
+    min-height: 380px;
     max-height: calc(100vh - var(--actual-header-height, 136px));
     max-height: calc(100svh - var(--actual-header-height, 136px));
-    min-height: 380px;
   }
 
   .hero-banner-image {
-    object-fit: contain;
+    object-fit: cover;
+    object-position: center center !important;
   }
 }
 

@@ -149,42 +149,76 @@ export const HomeDealsBudgetCategories: React.FC<HomeDealsBudgetCategoriesProps>
     return null;
   }
 
+  const renderDiscountCategoryCard = (item: DiscountCategoryItem, isMobileGrid: boolean = false) => {
+    const IconComp = categoryIconMap[item.icon || ''] || Tv;
+    return (
+      <Link
+        key={item.slug}
+        href={`/products?category=${item.slug}&minDiscount=50`}
+        className={`group relative bg-white rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-lg hover:border-red-400 hover:-translate-y-0.5 transition-all duration-200 flex flex-col justify-between overflow-hidden ${
+          isMobileGrid ? 'w-full p-3' : 'shrink-0 w-44 sm:w-52 p-3.5 snap-start'
+        }`}
+        aria-label={`Shop ${item.name} with 50% or more discount (${item.count} deals)`}
+      >
+        {/* Top Badge */}
+        <div className="flex items-center justify-between gap-1 mb-2">
+          <span className="inline-flex items-center gap-1 bg-red-600 text-white font-extrabold text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5 rounded-md shadow-2xs tracking-wide">
+            <Flame size={10} className="fill-white" />
+            50%+ Off
+          </span>
+          <span className="text-[10px] sm:text-[11px] font-semibold text-slate-500 bg-slate-100 px-1.5 sm:px-2 py-0.5 rounded-full">
+            {item.count} {item.count === 1 ? 'deal' : 'deals'}
+          </span>
+        </div>
+
+        {/* Representative Image Container */}
+        <div className="relative w-full h-28 sm:h-36 bg-slate-50 rounded-xl overflow-hidden flex items-center justify-center p-2 mb-2 sm:mb-3">
+          <DiscoveryImage
+            src={item.image}
+            alt={`${item.name} 50%+ Off deals`}
+            sizes={isMobileGrid ? '(max-width: 640px) 45vw, 208px' : '(max-width: 640px) 176px, 208px'}
+            fallbackIcon={
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-red-50 text-red-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
+                <IconComp size={28} />
+              </div>
+            }
+          />
+        </div>
+
+        {/* Category Details */}
+        <div className="pt-1.5 border-t border-slate-100 flex items-center justify-between min-w-0">
+          <span className="font-bold text-slate-900 group-hover:text-red-600 transition-colors text-xs sm:text-sm truncate">
+            {item.name}
+          </span>
+          <ArrowRight
+            size={13}
+            className="text-slate-400 group-hover:text-red-600 group-hover:translate-x-1 transition-all shrink-0 ml-1"
+          />
+        </div>
+      </Link>
+    );
+  };
+
   return (
     <section
-      className="space-y-10 sm:space-y-12"
+      className="space-y-8 sm:space-y-12"
       aria-label="Shop by Deals, Budget & Categories"
     >
-      {/* Section Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-2 border-b border-slate-200/80">
-        <div>
-          <div className="inline-flex items-center gap-1.5 bg-orange-100/90 text-orange-800 border border-orange-200 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2">
-            <Sparkles size={13} className="text-orange-600" />
-            <span>Curated Discovery</span>
-          </div>
-          <div className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight">
-            Shop by Deals, Budget & Categories
-          </div>
-          <p className="mt-1.5 text-sm sm:text-base text-slate-600">
-            Handpicked discovery shelves to find steep discounts, pocket-friendly budget deals, and all top categories.
-          </p>
-        </div>
-      </div>
-
       {/* ==================================================== */}
       {/* ROW 1: 50%+ OFF CATEGORIES                           */}
       {/* ==================================================== */}
       {discountCategories.length > 0 && (
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center shadow-2xs">
+            <div className="flex items-center gap-2 sm:gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center shadow-2xs shrink-0">
                 <Flame size={18} />
               </div>
               <div>
-                <h2 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
+                <h2 className="text-base sm:text-lg md:text-xl font-bold text-slate-900 tracking-tight">
                   50%+ Off Categories
                 </h2>
-                <p className="text-xs sm:text-sm text-slate-500">
+                <p className="text-xs sm:text-sm text-slate-500 line-clamp-1 sm:line-clamp-none">
                   Categories with verified active deals at half-price or more
                 </p>
               </div>
@@ -198,55 +232,17 @@ export const HomeDealsBudgetCategories: React.FC<HomeDealsBudgetCategoriesProps>
             </Link>
           </div>
 
-          <ShelfContainer ariaLabel="50%+ Off Categories">
-            {discountCategories.map((item: DiscountCategoryItem) => {
-              const IconComp = categoryIconMap[item.icon || ''] || Tv;
-              return (
-                <Link
-                  key={item.slug}
-                  href={`/products?category=${item.slug}&minDiscount=50`}
-                  className="group relative shrink-0 w-44 sm:w-52 bg-white rounded-2xl border border-slate-200/90 p-3.5 shadow-2xs hover:shadow-lg hover:border-red-400 hover:-translate-y-1 transition-all duration-200 snap-start flex flex-col justify-between overflow-hidden"
-                  aria-label={`Shop ${item.name} with 50% or more discount (${item.count} deals)`}
-                >
-                  {/* Top Badge */}
-                  <div className="flex items-center justify-between gap-1 mb-2.5">
-                    <span className="inline-flex items-center gap-1 bg-red-600 text-white font-extrabold text-[11px] px-2 py-0.5 rounded-md shadow-2xs tracking-wide">
-                      <Flame size={11} className="fill-white" />
-                      50%+ Off
-                    </span>
-                    <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
-                      {item.count} {item.count === 1 ? 'deal' : 'deals'}
-                    </span>
-                  </div>
+          {/* Mobile: 2-column grid showing all qualifying category cards */}
+          <div className="grid grid-cols-2 gap-3 sm:gap-4 md:hidden">
+            {discountCategories.map((item) => renderDiscountCategoryCard(item, true))}
+          </div>
 
-                  {/* Representative Image Container */}
-                  <div className="relative w-full h-32 sm:h-36 bg-slate-50 rounded-xl overflow-hidden flex items-center justify-center p-2 mb-3">
-                    <DiscoveryImage
-                      src={item.image}
-                      alt={`${item.name} 50%+ Off deals`}
-                      sizes="(max-width: 640px) 176px, 208px"
-                      fallbackIcon={
-                        <div className="w-16 h-16 rounded-xl bg-red-50 text-red-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
-                          <IconComp size={32} />
-                        </div>
-                      }
-                    />
-                  </div>
-
-                  {/* Category Details */}
-                  <div className="pt-1 border-t border-slate-100 flex items-center justify-between">
-                    <span className="font-bold text-slate-900 group-hover:text-red-600 transition-colors text-sm truncate">
-                      {item.name}
-                    </span>
-                    <ArrowRight
-                      size={14}
-                      className="text-slate-400 group-hover:text-red-600 group-hover:translate-x-1 transition-all shrink-0 ml-1"
-                    />
-                  </div>
-                </Link>
-              );
-            })}
-          </ShelfContainer>
+          {/* Desktop & Tablet: Horizontal carousel shelf */}
+          <div className="hidden md:block">
+            <ShelfContainer ariaLabel="50%+ Off Categories">
+              {discountCategories.map((item) => renderDiscountCategoryCard(item, false))}
+            </ShelfContainer>
+          </div>
         </div>
       )}
 

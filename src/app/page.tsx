@@ -29,7 +29,6 @@ import { ComparisonCard } from '@/components/compare/ComparisonCard';
 import {
   ArrowRight,
   ShoppingBag,
-  Sparkles,
 } from 'lucide-react';
 import type { Metadata } from 'next';
 import { buildCanonicalUrl } from '@/lib/seo';
@@ -131,25 +130,14 @@ export default async function HomePage() {
         className="relative w-full overflow-hidden border-b border-slate-200 hero-section-container flex items-center justify-center p-0 m-0 bg-slate-900"
         aria-label="Promotional Offers and Banners"
       >
+        <h1 className="sr-only">
+          Find the Best Deals, Sales &amp; Discounts in India — OnlineSaleLive
+        </h1>
         {/* Dynamic Banner Carousel (Displays only the uploaded banner image) */}
         <HeroBackgroundCarousel banners={heroBanners} />
       </section>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 sm:mt-8 space-y-10 sm:space-y-16">
-        {/* Primary Page Heading for SEO & Real-time Discovery */}
-        <div className="pt-2 sm:pt-4 pb-2 border-b border-slate-200/80">
-          <div className="inline-flex items-center gap-1.5 bg-orange-100/90 text-orange-800 border border-orange-200 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider mb-2">
-            <Sparkles size={13} className="text-orange-600" />
-            <span>India&apos;s Smart Shopping &amp; Deal Discovery</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight">
-            Find the Best Deals, Sales &amp; Discounts in India
-          </h1>
-          <p className="mt-1 text-sm sm:text-base text-slate-600">
-            Compare verified prices, festive sales, and real-time discounts across Amazon, Flipkart, Myntra, AJIO &amp; Meesho.
-          </p>
-        </div>
-
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 sm:mt-6 space-y-8 sm:space-y-12">
         {/* NEW SECTION: Shop by Deals, Budget & Categories */}
         <HomeDealsBudgetCategories data={discoveryData} />
 

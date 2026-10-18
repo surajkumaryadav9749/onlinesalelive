@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { HeroBanner } from '@/types';
 
 interface HeroBackgroundCarouselProps {
@@ -198,6 +199,36 @@ export const HeroBackgroundCarousel: React.FC<HeroBackgroundCarouselProps> = ({ 
           className="absolute inset-0 z-20 cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-500/50"
           aria-label={`View offer: ${activeBanner.title}`}
         />
+      )}
+
+      {/* Carousel Navigation Arrows for Desktop */}
+      {bannerCount > 1 && (
+        <>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              prevSlide();
+            }}
+            className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 z-30 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-900/60 hover:bg-slate-900/90 text-white flex items-center justify-center backdrop-blur-xs transition-all cursor-pointer shadow-md hidden sm:flex"
+            aria-label="Previous promotional banner"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              nextSlide();
+            }}
+            className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 z-30 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-900/60 hover:bg-slate-900/90 text-white flex items-center justify-center backdrop-blur-xs transition-all cursor-pointer shadow-md hidden sm:flex"
+            aria-label="Next promotional banner"
+          >
+            <ChevronRight size={20} />
+          </button>
+        </>
       )}
 
       {/* Slide Indicators: Subtle dots when multiple banners exist */}

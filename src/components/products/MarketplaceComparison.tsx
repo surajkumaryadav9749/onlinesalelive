@@ -1,6 +1,6 @@
 import React from 'react';
 import { MarketplaceOffer, MarketplaceName } from '@/types';
-import { ExternalLink, CheckCircle2, AlertCircle, ShoppingBag, Tag } from 'lucide-react';
+import { ExternalLink, CheckCircle2, AlertCircle, ShoppingBag, Tag, Store } from 'lucide-react';
 import { calculateDiscount } from '@/lib/deal-utils';
 
 interface MarketplaceComparisonProps {
@@ -21,19 +21,11 @@ const MarketplaceLogo: React.FC<{ name: MarketplaceName }> = ({ name }) => {
   switch (name) {
     case 'Amazon':
       return (
-        <div className="w-10 h-10 rounded-xl bg-[#131921] flex flex-col items-center justify-center p-1.5 shrink-0 shadow-2xs border border-slate-800">
-          <span className="text-[12px] font-black tracking-tight text-white leading-none">
-            amazon
-          </span>
-          <svg className="w-4 h-1.5 mt-0.5" viewBox="0 0 20 6" fill="none">
-            <path
-              d="M1 2.5C6 5.5 14 5.5 19 2.5"
-              stroke="#FF9900"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-            />
-            <path d="M16.5 1.5L19 2.5L17.5 4.5" fill="#FF9900" />
-          </svg>
+        <div
+          className="w-10 h-10 rounded-xl bg-[#131921] flex items-center justify-center shrink-0 shadow-2xs border border-slate-800"
+          title="Amazon"
+        >
+          <Store className="w-5 h-5 text-amber-400" aria-hidden="true" />
         </div>
       );
     case 'Flipkart':

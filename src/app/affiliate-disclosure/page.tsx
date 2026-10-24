@@ -101,6 +101,22 @@ export default function AffiliateDisclosurePage() {
           </p>
         </section>
 
+        {/* Amazon Associates Disclosure */}
+        <section className="space-y-3 bg-amber-50/60 border border-amber-200/80 rounded-2xl p-5 sm:p-6 text-slate-800">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0"></span>
+            <h2 className="text-base sm:text-lg font-bold text-slate-900">
+              Amazon Associates Program Disclosure
+            </h2>
+          </div>
+          <p className="text-sm sm:text-base font-bold text-slate-900 italic">
+            &ldquo;As an Amazon Associate I earn from qualifying purchases.&rdquo;
+          </p>
+          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+            OnlineSaleLive (onlinesalelive.in) is a participant in the Amazon Associates Program, an affiliate advertising program designed to provide a means for sites to earn advertising and referral fees by advertising and linking to Amazon.in (Amazon Seller Services Private Limited) and affiliated Amazon sites. When you click an Amazon product link on our platform and make a qualifying purchase, we may receive a commission at no additional cost to you.
+          </p>
+        </section>
+
         <section className="space-y-3">
           <h2 className="text-xl font-bold text-slate-900">
             Zero Extra Cost to the Consumer

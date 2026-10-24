@@ -233,8 +233,12 @@ export const MarketplaceComparison: React.FC<MarketplaceComparisonProps> = ({
       </div>
 
       {/* Footer Note */}
-      <div className="p-3 bg-slate-50/70 text-[11px] text-slate-500 text-center border-t border-slate-100">
-        Prices and stock availability are subject to change by retail merchants. Applicable coupons and terms are verified at checkout.
+      <div className="p-3 bg-slate-50/70 text-[11px] text-slate-500 text-center border-t border-slate-100 flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
+        <span>Prices and stock availability are subject to change by retail merchants. Applicable coupons and terms are verified at checkout.</span>
+        <span className="text-slate-300 hidden sm:inline">•</span>
+        <a href="/affiliate-disclosure" className="text-blue-600 hover:text-blue-800 hover:underline font-medium">
+          Affiliate Disclosure
+        </a>
       </div>
     </div>
   );

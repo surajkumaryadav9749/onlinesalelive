@@ -230,10 +230,10 @@ export const Footer: React.FC = () => {
           </div>
         </div>
 
-        {/* Affiliate Disclosure Notice (FTC & Indian Consumer Protection compliant) */}
+        {/* Affiliate Disclosure Notice (FTC, Amazon Associates & Indian Consumer Protection compliant) */}
         <div className="pt-8 border-t border-slate-800 text-xs text-slate-500 leading-relaxed space-y-2">
           <p>
-            <strong className="text-slate-400">Affiliate Disclosure:</strong> OnlineSaleLive (onlinesalelive.in) is a participant in affiliate marketing programs designed to provide a means for websites to earn referral fees by linking to retail partners including Amazon India, Flipkart, Myntra, AJIO, Meesho, and others. If you click on a deal or product link and make a purchase, we may earn an affiliate commission at absolutely no extra cost to you. Product prices, availability, and discount coupons are subject to marketplace fluctuations and may vary from the time of publication.
+            <strong className="text-slate-400">Affiliate Disclosure:</strong> OnlineSaleLive (onlinesalelive.in) is a participant in affiliate marketing programs designed to provide a means for websites to earn referral fees by linking to retail partners including Amazon India, Flipkart, Myntra, AJIO, Meesho, and others. As an Amazon Associate I earn from qualifying purchases. If you click on a deal or product link and make a purchase, we may earn an affiliate commission at absolutely no extra cost to you. Product prices, availability, and discount coupons are subject to marketplace fluctuations and may vary from the time of publication.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-between pt-4 gap-3 text-slate-500">
             <p>© {new Date().getFullYear()} OnlineSaleLive. All rights reserved.</p>

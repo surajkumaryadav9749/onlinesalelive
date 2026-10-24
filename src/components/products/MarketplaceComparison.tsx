@@ -1,6 +1,6 @@
 import React from 'react';
 import { MarketplaceOffer, MarketplaceName } from '@/types';
-import { ExternalLink, CheckCircle2, AlertCircle, ShoppingBag, Tag, Store } from 'lucide-react';
+import { ExternalLink, CheckCircle2, AlertCircle, ShoppingBag, Tag } from 'lucide-react';
 import { calculateDiscount } from '@/lib/deal-utils';
 
 interface MarketplaceComparisonProps {
@@ -15,61 +15,6 @@ const priorityMap: Record<MarketplaceName, number> = {
   Myntra: 3,
   AJIO: 4,
   Meesho: 5,
-};
-
-const MarketplaceLogo: React.FC<{ name: MarketplaceName }> = ({ name }) => {
-  switch (name) {
-    case 'Amazon':
-      return (
-        <div
-          className="w-10 h-10 rounded-xl bg-[#131921] flex items-center justify-center shrink-0 shadow-2xs border border-slate-800"
-          title="Amazon"
-        >
-          <Store className="w-5 h-5 text-amber-400" aria-hidden="true" />
-        </div>
-      );
-    case 'Flipkart':
-      return (
-        <div className="w-10 h-10 rounded-xl bg-[#2874F0] flex flex-col items-center justify-center p-1 shrink-0 shadow-2xs border border-blue-600">
-          <span className="text-[11px] font-black italic tracking-tight text-white leading-none">
-            Flipkart
-          </span>
-          <span className="text-[8px] font-extrabold text-[#FFE500] leading-none mt-0.5">
-            ★ Plus
-          </span>
-        </div>
-      );
-    case 'Myntra':
-      return (
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#FF3F6C] via-[#FF527B] to-[#F26A1A] flex items-center justify-center p-1 shrink-0 shadow-2xs border border-pink-400">
-          <span className="text-[13px] font-black tracking-wider text-white">
-            M
-          </span>
-        </div>
-      );
-    case 'AJIO':
-      return (
-        <div className="w-10 h-10 rounded-xl bg-[#2C4152] flex items-center justify-center p-1 shrink-0 shadow-2xs border border-slate-700">
-          <span className="text-[11px] font-black tracking-widest text-white">
-            AJIO
-          </span>
-        </div>
-      );
-    case 'Meesho':
-      return (
-        <div className="w-10 h-10 rounded-xl bg-[#9C1D60] flex items-center justify-center p-1 shrink-0 shadow-2xs border border-pink-800">
-          <span className="text-[11px] font-black tracking-tight text-white">
-            meesho
-          </span>
-        </div>
-      );
-    default:
-      return (
-        <div className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center font-extrabold text-sm text-slate-800 shrink-0">
-          {(name as string)?.slice(0, 2) || '??'}
-        </div>
-      );
-  }
 };
 
 const getButtonClasses = (name: MarketplaceName, isLowest: boolean) => {
@@ -177,81 +122,77 @@ export const MarketplaceComparison: React.FC<MarketplaceComparisonProps> = ({
           return (
             <div
               key={offer.name}
-              className={`p-4 sm:p-4.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 transition-colors ${
+              className={`p-4 sm:p-4.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 sm:gap-4 transition-colors ${
                 isLowest ? 'bg-emerald-50/30' : 'hover:bg-slate-50/40'
               }`}
             >
-              {/* Left / Top: Store Identity & Status Indicators */}
-              <div className="flex items-center gap-3">
-                <MarketplaceLogo name={offer.name} />
+              {/* Left / Top: Marketplace Identity & Status Indicators */}
+              <div className="space-y-1.5 flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-bold text-slate-900 text-sm sm:text-base">
+                    {offer.name}
+                  </span>
 
-                <div className="space-y-1">
-                  <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                    <span className="font-bold text-slate-900 text-sm sm:text-base">
-                      {offer.name}
+                  {/* Lowest Price badge (calculated dynamically when > 1 marketplace exists) */}
+                  {isLowest && (
+                    <span className="bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider shadow-2xs">
+                      Lowest Price
                     </span>
+                  )}
 
-                    {/* Lowest Price badge (calculated dynamically when > 1 marketplace exists) */}
-                    {isLowest && (
-                      <span className="bg-emerald-600 text-white text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider shadow-2xs">
-                        Lowest Price
+                  {/* Stock status indicator */}
+                  {offer.inStock ? (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                      <CheckCircle2 size={12} className="text-emerald-600 shrink-0" />
+                      In Stock
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-md">
+                      <AlertCircle size={12} className="text-rose-600 shrink-0" />
+                      Unavailable
+                    </span>
+                  )}
+
+                  {/* Discount percentage */}
+                  {discount > 0 && (
+                    <span className="bg-red-600 text-white text-[10px] font-black px-1.5 py-0.5 rounded shadow-2xs">
+                      {discount}% OFF
+                    </span>
+                  )}
+
+                  {/* Subtle affiliate indicator */}
+                  {offer.isAffiliate && (
+                    <span className="bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-semibold px-1.5 py-0.5 rounded">
+                      Affiliate
+                    </span>
+                  )}
+                </div>
+
+                {/* Deals / Coupons / Notes if available */}
+                {(offer.dealBadge || offer.couponCode || offer.couponText) && (
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 pt-0.5">
+                    {offer.dealBadge && !isLowest && (
+                      <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-1.5 py-0.5 rounded">
+                        {offer.dealBadge}
                       </span>
                     )}
-
-                    {/* Stock status indicator */}
-                    {offer.inStock ? (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
-                        <CheckCircle2 size={12} className="text-emerald-600 shrink-0" />
-                        In Stock
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-md">
-                        <AlertCircle size={12} className="text-rose-600 shrink-0" />
-                        Unavailable
+                    {offer.couponCode && (
+                      <span className="flex items-center gap-1 text-purple-700 bg-purple-50 px-1.5 py-0.2 rounded font-mono text-[11px]">
+                        <Tag size={10} />
+                        Code: {offer.couponCode}
                       </span>
                     )}
-
-                    {/* Discount percentage */}
-                    {discount > 0 && (
-                      <span className="bg-red-600 text-white text-[10px] font-black px-1.5 py-0.5 rounded shadow-2xs">
-                        {discount}% OFF
-                      </span>
-                    )}
-
-                    {/* Subtle affiliate indicator */}
-                    {offer.isAffiliate && (
-                      <span className="bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-semibold px-1.5 py-0.5 rounded">
-                        Affiliate
+                    {offer.couponText && !offer.couponCode && (
+                      <span className="text-[11px] text-purple-700">
+                        {offer.couponText}
                       </span>
                     )}
                   </div>
-
-                  {/* Deals / Coupons / Notes if available */}
-                  {(offer.dealBadge || offer.couponCode || offer.couponText) && (
-                    <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                      {offer.dealBadge && !isLowest && (
-                        <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-1.5 py-0.5 rounded">
-                          {offer.dealBadge}
-                        </span>
-                      )}
-                      {offer.couponCode && (
-                        <span className="flex items-center gap-1 text-purple-700 bg-purple-50 px-1.5 py-0.2 rounded font-mono text-[11px]">
-                          <Tag size={10} />
-                          Code: {offer.couponCode}
-                        </span>
-                      )}
-                      {offer.couponText && !offer.couponCode && (
-                        <span className="text-[11px] text-purple-700">
-                          {offer.couponText}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
 
               {/* Right / Bottom: Pricing & Buy Button Action */}
-              <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto pt-2.5 sm:pt-0 border-t border-slate-100 sm:border-0">
+              <div className="flex items-center justify-between sm:justify-end gap-3.5 sm:gap-4 shrink-0 w-full sm:w-auto pt-2.5 sm:pt-0 border-t border-slate-100 sm:border-0">
                 <div className="text-left sm:text-right">
                   <div className="flex items-baseline sm:flex-col sm:items-end gap-1.5 sm:gap-0">
                     <span className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
@@ -265,13 +206,13 @@ export const MarketplaceComparison: React.FC<MarketplaceComparisonProps> = ({
                   </div>
                 </div>
 
-                <div>
+                <div className="shrink-0">
                   {offer.inStock && hasDestination ? (
                     <a
                       href={targetUrl}
                       target="_blank"
                       rel="noopener noreferrer nofollow"
-                      className={`inline-flex items-center justify-center gap-1.5 px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all transform hover:-translate-y-0.5 ${buttonClasses}`}
+                      className={`inline-flex items-center justify-center gap-1.5 px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all transform hover:-translate-y-0.5 shrink-0 whitespace-nowrap ${buttonClasses}`}
                     >
                       <span>Buy on {offer.name}</span>
                       <ExternalLink size={14} className="shrink-0" />
@@ -279,7 +220,7 @@ export const MarketplaceComparison: React.FC<MarketplaceComparisonProps> = ({
                   ) : (
                     <button
                       disabled
-                      className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200"
+                      className="px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200 shrink-0 whitespace-nowrap"
                     >
                       Unavailable
                     </button>
